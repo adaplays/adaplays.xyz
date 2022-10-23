@@ -1,0 +1,4 @@
+- Design insipiration: https://favpng.com/png_view/king-of-diamonds-card-king-of-clubs-hearts-playing-card-png/KCAQLXQh.
+- Ada currency symbol: https://en.wikipedia.org/wiki/File:Coin-ada-big.svg.
+- Cardano symbol: https://worldvectorlogo.com/logo/cardano.
+- Google search said playing card dimension to be: 8.9 cm x 6.4 cm.
