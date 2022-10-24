@@ -1,7 +1,6 @@
 import Logo from './logo';
 import { useState } from 'react';
 import NextLink from 'next/link';
-import '@fontsource/jetbrains-mono';
 import { navHeight } from '../global-variables';
 
 import {
@@ -38,7 +37,7 @@ export default function Navbar() {
           onMouseLeave={() => setLogoHover(false)}
         >
           <HStack>
-            <Text fontFamily='JetBrains Mono' fontWeight='bold' fontSize='xl' position='relative' left='10px' bg='white' zIndex='1' borderRightRadius='full'>
+            <Text fontWeight='bold' fontSize='xl' position='relative' left='10px' bg='white' zIndex='1' borderRightRadius='full'>
               adaplays
             </Text>
             <Logo/>

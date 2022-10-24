@@ -5,7 +5,7 @@ import Navbar from '../components/navbar'
 const Home: NextPage = () => {
   return (
     <Container maxWidth='container.md'>
-      <Navbar></Navbar>
+      <Navbar/>
     </Container>
   )
 }

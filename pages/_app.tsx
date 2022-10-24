@@ -1,10 +1,19 @@
 import type { AppProps } from 'next/app'
-import { ChakraProvider } from '@chakra-ui/react'
+import { ChakraProvider, extendTheme } from '@chakra-ui/react'
 import Head from 'next/head'
+import '@fontsource/jetbrains-mono';
+
+const theme = extendTheme({
+  fonts: {
+    heading: `'JetBrains Mono', monospace`,
+    body: `'JetBrains Mono', monospace`,
+  },
+})
+
 
 function MyApp({ Component, pageProps }: AppProps) {
   return (
-    <ChakraProvider>
+    <ChakraProvider theme={theme}>
       <Head>
         <title>adaplays.xyz</title>
         <meta name="description" content="Place to play simple games with ada" />
