@@ -46,7 +46,7 @@ export default function Navbar() {
         </Link>
       </NextLink>
       <HStack mr='10px'>
-        <NextLink href='https://www.github.com/sourabhxyz' passHref>
+        <NextLink href='https://www.github.com/adaplays' passHref>
           <Box 
             borderColor='white'  // to hide it
             borderBottomWidth='2px'
