@@ -1,7 +1,8 @@
 import type { AppProps } from 'next/app'
-import { ChakraProvider, extendTheme } from '@chakra-ui/react'
+import { ChakraProvider, extendTheme, Container } from '@chakra-ui/react'
 import Head from 'next/head'
 import '@fontsource/jetbrains-mono';
+import Navbar from '../components/navbar'
 
 const theme = extendTheme({
   fonts: {
@@ -27,7 +28,10 @@ function MyApp({ Component, pageProps }: AppProps) {
         <meta name="msapplication-config" content="/favicon/browserconfig.xml"/>
         <meta name="theme-color" content="#ffffff"/>
       </Head>
-      <Component {...pageProps} />
+      <Container maxWidth='container.md'>
+        <Navbar/>
+        <Component {...pageProps} />
+      </Container>
     </ChakraProvider>
   )
 }
