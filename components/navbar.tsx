@@ -33,13 +33,23 @@ import {
   AlertDialogOverlay,
   AlertDialogCloseButton,
   IconButton,
+  VStack,
+  ButtonGroup,
+  FormControl,
+  FormLabel,
+  FormErrorMessage,
+  Input
 } from '@chakra-ui/react';
 
 
 import { FaGithub } from 'react-icons/fa';
-import { useSession } from 'next-auth/react';
+import { useSession, signIn } from 'next-auth/react';
 import type { SupportedWallets } from '../types/types'
 import { LucidContext } from '../context/LucidContext'
+
+import * as yup from "yup";
+// import { useFormik } from 'formik'
+import { Field, Form, Formik } from 'formik';
 
 export default function Navbar() {
   const [logoHover, setLogoHover] = useState<boolean>(false);
@@ -108,7 +118,8 @@ const ConnectButton = () => {
   const lucidContext = useContext(LucidContext)
   // const hasNamiExtension = useHasNamiExtension()
   const [walletConnected, setWalletConnected] = useState<boolean>(false)
-
+  const [ signUp, setSignUp] = useState<boolean>(false)
+  const [ step3, setStep3 ] = useState<boolean>(false)
   // I have two alert setup, one fires up when selected wallet is not installed in the browser and other one when enabled wallet is on wrong network
   const walletNotFound = useDisclosure()
   const cancelRefWalletNotFound = useRef(null)
@@ -116,6 +127,33 @@ const ConnectButton = () => {
   const cancelRefWrongNetwork = useRef(null)
 
   const supportedWallets: SupportedWallets[] = ['nami', 'eternl'] 
+
+  const createPasswordSchema = yup.object().shape({
+    password: yup
+      .string()
+      .required('Please enter your password')
+      .matches(
+        /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/,
+        "Must Contain 8 Characters, One Uppercase, One Lowercase, One Number and one special case Character"
+      ),
+    confirmPassword: yup.string().oneOf([yup.ref('password'), null], "Passwords must match").required('Please confirm your password')
+  })
+
+  const connectbuttonStyle = {
+    variant: 'outline',
+    borderColor: 'black',
+  }
+
+  const popoverHeaderStyle = {
+    align: 'center', 
+    fontWeight: 'bold',
+    borderColor: 'black'
+  }
+
+  const popoverFooterStyle = {
+    borderColor: 'black', 
+    mt: '10px',
+  }
 
   // useEffect(() => {
   //   async function isEnabled() {
@@ -151,6 +189,7 @@ const ConnectButton = () => {
           break;
         }
       }
+      // In case the above connection fails, the whole component fails so I guess nothing to worry.
       const networkId = await api.getNetworkId();
       if (networkId !== 0) {
         console.log("not on right network")
@@ -171,7 +210,7 @@ const ConnectButton = () => {
   }
   
   if (status === 'loading') return (
-    <Button isLoading>
+    <Button isLoading {...connectbuttonStyle}>
       Connect
     </Button>
   ); else if (status === 'unauthenticated') return (
@@ -212,41 +251,114 @@ const ConnectButton = () => {
       </AlertDialog>
       <Popover>
         <PopoverTrigger>
-          <Button variant='outline' borderColor='black'>
+          <Button {...connectbuttonStyle}>
             Connect
           </Button>
         </PopoverTrigger>
           { walletConnected === false 
             ? <PopoverContent>
-                <PopoverHeader>
+                <PopoverHeader {...popoverHeaderStyle}>
                   Select wallet
                 </PopoverHeader>
                 <PopoverArrow />
                 <PopoverCloseButton />
                 <PopoverBody>
-                  {supportedWallets.map((walletName) => (
-                    <Button key={walletName} onClick={() => connectWallet(walletName)}>
-                      {walletName}
-                    </Button>
-                  ))}
-                  <PopoverFooter>
-                    <Box> step 1 of 2 </Box>
+                  <VStack>
+                    {supportedWallets.map((walletName) => (
+                      <Button key={walletName} onClick={() => connectWallet(walletName)} variant='link' colorScheme='black'>
+                        {walletName[0].toUpperCase() + walletName.slice(1)}
+                      </Button>
+                    ))}
+                  </VStack>
+                  <PopoverFooter {...popoverFooterStyle}>
+                    <Text align='center'> ✤ step 1 of 3 ✤ </Text>
                   </PopoverFooter>
                 </PopoverBody> 
               </PopoverContent>
-            : <PopoverContent>
-                <PopoverHeader>
-                  Enter password
-                </PopoverHeader>
-                <PopoverArrow />
-                <PopoverCloseButton />
-                <PopoverBody>
-                  Hello their!
-                  <PopoverFooter>
-                    <Box> step 2 of 2 </Box>
-                  </PopoverFooter>
-                </PopoverBody> 
-              </PopoverContent>
+            : step3 === false 
+              ? <PopoverContent>
+                  <PopoverHeader {...popoverHeaderStyle}>
+                    Enter password
+                  </PopoverHeader>
+                  <PopoverArrow />
+                  <PopoverCloseButton />
+                  <PopoverBody>
+                    <VStack>
+                      <Button variant='link' colorScheme='black' onClick={() => { setStep3(true) }}>
+                        I already have password
+                      </Button>
+                      <Button variant='link' colorScheme='black' onClick={() => { setStep3(true); setSignUp(true); }}>
+                        Create password
+                      </Button>
+                    </VStack>
+                    <PopoverFooter {...popoverFooterStyle}>
+                      <Text align='center'> ✤ step 2 of 3 ✤ </Text>
+                    </PopoverFooter>
+                  </PopoverBody> 
+                </PopoverContent>
+              : signUp === true 
+                ? <PopoverContent>
+                    <PopoverHeader {...popoverHeaderStyle}>
+                      Create password
+                    </PopoverHeader>
+                    <PopoverArrow />
+                    <PopoverCloseButton />
+                    <PopoverBody>
+                      🛈 Some games require the generation of random numbers which we store in database by encrypting it with your password (so that you can recover old games). This is the sole reason why password is required.
+                      <br />
+                      ⚠ Since we don&apos;t store your password but only its hash, we cannot recover it in case you lose it.
+                      <Formik
+                        initialValues={{ password: '', confirmPassword: '' }}
+                        validationSchema={createPasswordSchema}
+                        onSubmit={async (values, actions) => {
+                          const walletAddress = await lucidContext!.lucid.wallet.address()
+                          signIn('credentials', { address: walletAddress, password: values.password })
+                          alert(JSON.stringify({ address: walletAddress, password: values.password }, null, 2))
+                          actions.resetForm()
+                        }}
+                      >
+                        {(props) => (
+                          <Form>
+                            <FormControl isInvalid={!!props.errors.password && props.touched.password} mt='7px' borderColor='black'>
+                              {/* <FormLabel>Enter password</FormLabel> */}
+                              <Field as={Input} name='password' type='password' placeholder='Enter password' />
+                              <FormErrorMessage>{props.errors.password}</FormErrorMessage>
+                            </FormControl>
+                            <FormControl isInvalid={!!props.errors.confirmPassword && props.touched.confirmPassword} mt='7px' borderColor='black'>
+                              {/* <FormLabel>Confirm password</FormLabel> */}
+                              <Field as={Input} name='confirmPassword' type='password' placeholder='Confirm password' />
+                              <FormErrorMessage>{props.errors.confirmPassword}</FormErrorMessage>
+                            </FormControl>
+                            <Flex justify='center'>
+                              <Button
+                                mt={4}
+                                {...connectbuttonStyle}
+                                isLoading={props.isSubmitting}
+                                type='submit'
+                              >
+                                Submit
+                              </Button>
+                            </Flex>
+                          </Form>
+                        )}
+                      </Formik>
+                      <PopoverFooter {...popoverFooterStyle}>
+                        <Text align='center'> ✤ step 3 of 3 ✤ </Text>
+                      </PopoverFooter>
+                    </PopoverBody> 
+                  </PopoverContent>
+                : <PopoverContent>
+                    <PopoverHeader {...popoverHeaderStyle}>
+                      Enter password
+                    </PopoverHeader>
+                    <PopoverArrow />
+                    <PopoverCloseButton />
+                    <PopoverBody>
+                      <PopoverFooter {...popoverFooterStyle}>
+                        <Text align='center'> ✤ step 3 of 3 ✤ </Text>
+                      </PopoverFooter>
+                    </PopoverBody> 
+                  </PopoverContent>
           }
       </Popover>
     </>

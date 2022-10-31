@@ -31,7 +31,7 @@ export const authOptions: NextAuthOptions = {
         // e.g. return { id: 1, name: 'J Smith', email: 'jsmith@example.com' }
         // You can also use the `req` object to obtain additional parameters
         // (i.e., the request IP address)
-        if (address !== 'someDummyAddress' || password !== 'password') {
+        if (address !== 'enterYourAddress' || password !== 'HelloS#d31nk') {
           return null;
         }
         return { id: '1234', address, password }
