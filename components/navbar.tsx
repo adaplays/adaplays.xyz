@@ -43,8 +43,8 @@ import {
 
 
 import { FaGithub } from 'react-icons/fa';
-import { useSession, signIn } from 'next-auth/react';
-import type { SupportedWallets } from '../types/types'
+import { useSession, signIn, signOut } from 'next-auth/react';
+import type { SupportedWallets, jwtUser } from '../types/types'
 import { LucidContext } from '../context/LucidContext'
 
 import * as yup from "yup";
@@ -120,12 +120,21 @@ const ConnectButton = () => {
   const [walletConnected, setWalletConnected] = useState<boolean>(false)
   const [ signUp, setSignUp] = useState<boolean>(false)
   const [ step3, setStep3 ] = useState<boolean>(false)
+  const [ selectWalletTapped, setSelectWalletTapped ] = useState<boolean>(false)
   // I have two alert setup, one fires up when selected wallet is not installed in the browser and other one when enabled wallet is on wrong network
   const walletNotFound = useDisclosure()
   const cancelRefWalletNotFound = useRef(null)
   const wrongNetwork = useDisclosure()
   const cancelRefWrongNetwork = useRef(null)
-
+  
+  const resetStatus = () => {
+    setTimeout(() => {
+      setWalletConnected(false);
+      setStep3(false);
+      setSignUp(false);
+      setSelectWalletTapped(false);
+    }, 200)
+  }
   const supportedWallets: SupportedWallets[] = ['nami', 'eternl'] 
 
   const createPasswordSchema = yup.object().shape({
@@ -178,33 +187,38 @@ const ConnectButton = () => {
     if (!hasWalletExtension(walletName)) {
       walletNotFound.onOpen();
     } else {
-      let api: WalletApi | undefined = undefined
-      switch(walletName) {
-        case "nami": {
-          api = await window.cardano.nami.enable();
-          break;
+      try {
+        let api: WalletApi | undefined = undefined
+        switch(walletName) {
+          case "nami": {
+            api = await window.cardano.nami.enable();
+            break;
+          }
+          case "eternl": {
+            api = await window.cardano.eternl.enable();
+            break;
+          }
         }
-        case "eternl": {
-          api = await window.cardano.eternl.enable();
-          break;
+        // In case the above connection fails, the whole component fails so I guess nothing to worry.
+        const networkId = await api.getNetworkId();
+        if (networkId !== 0) {
+          console.log("not on right network")
+          wrongNetwork.onOpen()
+        } else {
+          // Assumes you are in a browser environment
+          console.log('hi')
+          const newLucid = await Lucid.new(
+            new Blockfrost("/api/blockfrost/0", ""),  // project-id header will be set by redirect
+            "Preprod"
+          )
+          console.log('there')
+          newLucid.selectWallet(api)
+          lucidContext!.setLucid(newLucid)
+          setWalletConnected(await window.cardano.nami.isEnabled())
         }
-      }
-      // In case the above connection fails, the whole component fails so I guess nothing to worry.
-      const networkId = await api.getNetworkId();
-      if (networkId !== 0) {
-        console.log("not on right network")
-        wrongNetwork.onOpen()
-      } else {
-        // Assumes you are in a browser environment
-        console.log('hi')
-        const newLucid = await Lucid.new(
-          new Blockfrost("/api/blockfrost/0", ""),  // project-id header will be set by redirect
-          "Preprod"
-        )
-        console.log('there')
-        newLucid.selectWallet(api)
-        lucidContext!.setLucid(newLucid)
-        setWalletConnected(await window.cardano.nami.isEnabled())
+      } catch (e) {
+        console.log(e);
+        resetStatus();
       }
     }
   }
@@ -249,7 +263,7 @@ const ConnectButton = () => {
           </AlertDialogBody>
         </AlertDialogContent>
       </AlertDialog>
-      <Popover>
+      <Popover onClose={ resetStatus }>
         <PopoverTrigger>
           <Button {...connectbuttonStyle}>
             Connect
@@ -265,7 +279,7 @@ const ConnectButton = () => {
                 <PopoverBody>
                   <VStack>
                     {supportedWallets.map((walletName) => (
-                      <Button key={walletName} onClick={() => connectWallet(walletName)} variant='link' colorScheme='black'>
+                      <Button key={walletName} onClick={() => {setSelectWalletTapped(true);  connectWallet(walletName)}} variant='link' colorScheme='black' isLoading={selectWalletTapped}>
                         {walletName[0].toUpperCase() + walletName.slice(1)}
                       </Button>
                     ))}
@@ -311,8 +325,11 @@ const ConnectButton = () => {
                         initialValues={{ password: '', confirmPassword: '' }}
                         validationSchema={createPasswordSchema}
                         onSubmit={async (values, actions) => {
-                          const walletAddress = await lucidContext!.lucid.wallet.address()
-                          signIn('credentials', { address: walletAddress, password: values.password })
+                          const walletAddress = await lucidContext!.lucid!.wallet.address()
+                          const cred: jwtUser = {id: walletAddress, password: values.password}
+                          // spread is used because: https://bobbyhadz.com/blog/typescript-index-signature-for-type-is-missing-in-type
+                          const res = await signIn('credentials', { ...cred, redirect: false })
+                          console.log(res)
                           alert(JSON.stringify({ address: walletAddress, password: values.password }, null, 2))
                           actions.resetForm()
                         }}
@@ -363,8 +380,8 @@ const ConnectButton = () => {
       </Popover>
     </>
   ); else return (
-    <Button>
-      Logout
+    <Button {...connectbuttonStyle} onClick={() => { resetStatus(); signOut({redirect: false})}}>
+      Disconnect
     </Button>
   );
 }

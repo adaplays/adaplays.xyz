@@ -1,10 +1,11 @@
 import type { NextPage } from 'next'
+import type { jwtUser } from 'types/types'
 import { useSession } from 'next-auth/react'
 import { Text } from '@chakra-ui/react';
 
+
 const Home: NextPage = () => {
   const { data, status } = useSession()
-
   if (status === 'unauthenticated') 
     return (
       <Text>
@@ -17,7 +18,10 @@ const Home: NextPage = () => {
         Loading
       </Text>
     );
-  return (<Text>Welcome boss</Text>);
+  else {
+    const userData = data!.user as jwtUser
+    return (<Text>{userData.id} {userData.password}</Text>);
+  }
 }
 
 export default Home
