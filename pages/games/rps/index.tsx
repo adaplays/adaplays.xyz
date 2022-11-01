@@ -5,13 +5,13 @@ import { Text } from '@chakra-ui/react';
 
 const Home: NextPage = () => {
   const { data, status } = useSession()
-  if (status === 'unauthenticated') 
+  if (status === 'unauthenticated')
     return (
       <Text>
         Aye, kindly connect first!
       </Text>
-    ); 
-  else if (status === 'loading') 
+    );
+  else if (status === 'loading')
     return (
       <Text>
         Loading

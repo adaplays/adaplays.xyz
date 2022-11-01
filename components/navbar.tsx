@@ -78,7 +78,7 @@ export default function Navbar() {
             <Text fontWeight='bold' fontSize='xl' position='relative' left='10px' bg='white' zIndex='1' borderRightRadius='full'>
               adaplays
             </Text>
-            <Logo/>
+            <Logo />
           </HStack>
           {/* <Logo logoHover={logoHover} /> */}
         </Link>
@@ -118,15 +118,15 @@ const ConnectButton = () => {
   const lucidContext = useContext(LucidContext)
   // const hasNamiExtension = useHasNamiExtension()
   const [walletConnected, setWalletConnected] = useState<boolean>(false)
-  const [ signUp, setSignUp] = useState<boolean>(false)
-  const [ step3, setStep3 ] = useState<boolean>(false)
-  const [ selectWalletTapped, setSelectWalletTapped ] = useState<boolean>(false)
+  const [signUp, setSignUp] = useState<boolean>(false)
+  const [step3, setStep3] = useState<boolean>(false)
+  const [selectWalletTapped, setSelectWalletTapped] = useState<boolean>(false)
   // I have two alert setup, one fires up when selected wallet is not installed in the browser and other one when enabled wallet is on wrong network
   const walletNotFound = useDisclosure()
   const cancelRefWalletNotFound = useRef(null)
   const wrongNetwork = useDisclosure()
   const cancelRefWrongNetwork = useRef(null)
-  
+
   const resetStatus = () => {
     // why setTimeout? Well because there is a slight delay in closing of Popover.
     setTimeout(() => {
@@ -136,7 +136,7 @@ const ConnectButton = () => {
       setSelectWalletTapped(false);
     }, 200)
   }
-  const supportedWallets: SupportedWallets[] = ['nami', 'eternl'] 
+  const supportedWallets: SupportedWallets[] = ['nami', 'eternl']
 
   const createPasswordSchema = yup.object().shape({
     password: yup
@@ -155,13 +155,13 @@ const ConnectButton = () => {
   }
 
   const popoverHeaderStyle = {
-    align: 'center', 
+    align: 'center',
     fontWeight: 'bold',
     borderColor: 'black'
   }
 
   const popoverFooterStyle = {
-    borderColor: 'black', 
+    borderColor: 'black',
     mt: '10px',
   }
 
@@ -174,7 +174,7 @@ const ConnectButton = () => {
   // }, [hasNamiExtension])
 
   const hasWalletExtension = (walletName: SupportedWallets) => {
-    switch(walletName) {
+    switch (walletName) {
       case "nami": {
         return (!!window.cardano?.nami);
       }
@@ -190,7 +190,7 @@ const ConnectButton = () => {
     } else {
       try {
         let api: WalletApi | undefined = undefined
-        switch(walletName) {
+        switch (walletName) {
           case "nami": {
             api = await window.cardano.nami.enable();
             break;
@@ -223,7 +223,7 @@ const ConnectButton = () => {
       }
     }
   }
-  
+
   if (status === 'loading') return (
     <Button isLoading {...connectbuttonStyle}>
       Connect
@@ -264,124 +264,124 @@ const ConnectButton = () => {
           </AlertDialogBody>
         </AlertDialogContent>
       </AlertDialog>
-      <Popover onClose={ resetStatus }>
+      <Popover onClose={resetStatus}>
         <PopoverTrigger>
           <Button {...connectbuttonStyle}>
             Connect
           </Button>
         </PopoverTrigger>
-          { walletConnected === false 
+        {walletConnected === false
+          ? <PopoverContent>
+            <PopoverHeader {...popoverHeaderStyle}>
+              Select wallet
+            </PopoverHeader>
+            <PopoverArrow />
+            <PopoverCloseButton />
+            <PopoverBody>
+              <VStack>
+                {supportedWallets.map((walletName) => (
+                  <Button key={walletName} onClick={() => { setSelectWalletTapped(true); connectWallet(walletName) }} variant='link' colorScheme='black' isLoading={selectWalletTapped}>
+                    {walletName[0].toUpperCase() + walletName.slice(1)}
+                  </Button>
+                ))}
+              </VStack>
+              <PopoverFooter {...popoverFooterStyle}>
+                <Text align='center'> ✤ step 1 of 3 ✤ </Text>
+              </PopoverFooter>
+            </PopoverBody>
+          </PopoverContent>
+          : step3 === false
             ? <PopoverContent>
+              <PopoverHeader {...popoverHeaderStyle}>
+                Enter password
+              </PopoverHeader>
+              <PopoverArrow />
+              <PopoverCloseButton />
+              <PopoverBody>
+                <VStack>
+                  <Button variant='link' colorScheme='black' onClick={() => { setStep3(true) }}>
+                    I already have password
+                  </Button>
+                  <Button variant='link' colorScheme='black' onClick={() => { setStep3(true); setSignUp(true); }}>
+                    Create password
+                  </Button>
+                </VStack>
+                <PopoverFooter {...popoverFooterStyle}>
+                  <Text align='center'> ✤ step 2 of 3 ✤ </Text>
+                </PopoverFooter>
+              </PopoverBody>
+            </PopoverContent>
+            : signUp === true
+              ? <PopoverContent>
                 <PopoverHeader {...popoverHeaderStyle}>
-                  Select wallet
+                  Create password
                 </PopoverHeader>
                 <PopoverArrow />
                 <PopoverCloseButton />
                 <PopoverBody>
-                  <VStack>
-                    {supportedWallets.map((walletName) => (
-                      <Button key={walletName} onClick={() => {setSelectWalletTapped(true);  connectWallet(walletName)}} variant='link' colorScheme='black' isLoading={selectWalletTapped}>
-                        {walletName[0].toUpperCase() + walletName.slice(1)}
-                      </Button>
-                    ))}
-                  </VStack>
+                  🛈 Some games require the generation of random numbers which we store in database by encrypting it with your password (so that you can recover old games). This is the sole reason why password is required.
+                  <br />
+                  ⚠ Since we don&apos;t store your password but only its hash, we cannot recover it in case you lose it.
+                  <Formik
+                    initialValues={{ password: '', confirmPassword: '' }}
+                    validationSchema={createPasswordSchema}
+                    onSubmit={async (values, actions) => {
+                      const walletAddress = await lucidContext!.lucid!.wallet.address()
+                      const cred: User = { id: walletAddress, password: values.password }
+                      // spread is used because: https://bobbyhadz.com/blog/typescript-index-signature-for-type-is-missing-in-type
+                      const res = await signIn('credentials', { ...cred, redirect: false })
+                      console.log(res)
+                      alert(JSON.stringify({ address: walletAddress, password: values.password }, null, 2))
+                      actions.resetForm()
+                    }}
+                  >
+                    {(props) => (
+                      <Form>
+                        <FormControl isInvalid={!!props.errors.password && props.touched.password} mt='7px' borderColor='black'>
+                          {/* <FormLabel>Enter password</FormLabel> */}
+                          <Field as={Input} name='password' type='password' placeholder='Enter password' />
+                          <FormErrorMessage>{props.errors.password}</FormErrorMessage>
+                        </FormControl>
+                        <FormControl isInvalid={!!props.errors.confirmPassword && props.touched.confirmPassword} mt='7px' borderColor='black'>
+                          {/* <FormLabel>Confirm password</FormLabel> */}
+                          <Field as={Input} name='confirmPassword' type='password' placeholder='Confirm password' />
+                          <FormErrorMessage>{props.errors.confirmPassword}</FormErrorMessage>
+                        </FormControl>
+                        <Flex justify='center'>
+                          <Button
+                            mt={4}
+                            {...connectbuttonStyle}
+                            isLoading={props.isSubmitting}
+                            type='submit'
+                          >
+                            Submit
+                          </Button>
+                        </Flex>
+                      </Form>
+                    )}
+                  </Formik>
                   <PopoverFooter {...popoverFooterStyle}>
-                    <Text align='center'> ✤ step 1 of 3 ✤ </Text>
+                    <Text align='center'> ✤ step 3 of 3 ✤ </Text>
                   </PopoverFooter>
-                </PopoverBody> 
+                </PopoverBody>
               </PopoverContent>
-            : step3 === false 
-              ? <PopoverContent>
-                  <PopoverHeader {...popoverHeaderStyle}>
-                    Enter password
-                  </PopoverHeader>
-                  <PopoverArrow />
-                  <PopoverCloseButton />
-                  <PopoverBody>
-                    <VStack>
-                      <Button variant='link' colorScheme='black' onClick={() => { setStep3(true) }}>
-                        I already have password
-                      </Button>
-                      <Button variant='link' colorScheme='black' onClick={() => { setStep3(true); setSignUp(true); }}>
-                        Create password
-                      </Button>
-                    </VStack>
-                    <PopoverFooter {...popoverFooterStyle}>
-                      <Text align='center'> ✤ step 2 of 3 ✤ </Text>
-                    </PopoverFooter>
-                  </PopoverBody> 
-                </PopoverContent>
-              : signUp === true 
-                ? <PopoverContent>
-                    <PopoverHeader {...popoverHeaderStyle}>
-                      Create password
-                    </PopoverHeader>
-                    <PopoverArrow />
-                    <PopoverCloseButton />
-                    <PopoverBody>
-                      🛈 Some games require the generation of random numbers which we store in database by encrypting it with your password (so that you can recover old games). This is the sole reason why password is required.
-                      <br />
-                      ⚠ Since we don&apos;t store your password but only its hash, we cannot recover it in case you lose it.
-                      <Formik
-                        initialValues={{ password: '', confirmPassword: '' }}
-                        validationSchema={createPasswordSchema}
-                        onSubmit={async (values, actions) => {
-                          const walletAddress = await lucidContext!.lucid!.wallet.address()
-                          const cred: User = {id: walletAddress, password: values.password}
-                          // spread is used because: https://bobbyhadz.com/blog/typescript-index-signature-for-type-is-missing-in-type
-                          const res = await signIn('credentials', { ...cred, redirect: false })
-                          console.log(res)
-                          alert(JSON.stringify({ address: walletAddress, password: values.password }, null, 2))
-                          actions.resetForm()
-                        }}
-                      >
-                        {(props) => (
-                          <Form>
-                            <FormControl isInvalid={!!props.errors.password && props.touched.password} mt='7px' borderColor='black'>
-                              {/* <FormLabel>Enter password</FormLabel> */}
-                              <Field as={Input} name='password' type='password' placeholder='Enter password' />
-                              <FormErrorMessage>{props.errors.password}</FormErrorMessage>
-                            </FormControl>
-                            <FormControl isInvalid={!!props.errors.confirmPassword && props.touched.confirmPassword} mt='7px' borderColor='black'>
-                              {/* <FormLabel>Confirm password</FormLabel> */}
-                              <Field as={Input} name='confirmPassword' type='password' placeholder='Confirm password' />
-                              <FormErrorMessage>{props.errors.confirmPassword}</FormErrorMessage>
-                            </FormControl>
-                            <Flex justify='center'>
-                              <Button
-                                mt={4}
-                                {...connectbuttonStyle}
-                                isLoading={props.isSubmitting}
-                                type='submit'
-                              >
-                                Submit
-                              </Button>
-                            </Flex>
-                          </Form>
-                        )}
-                      </Formik>
-                      <PopoverFooter {...popoverFooterStyle}>
-                        <Text align='center'> ✤ step 3 of 3 ✤ </Text>
-                      </PopoverFooter>
-                    </PopoverBody> 
-                  </PopoverContent>
-                : <PopoverContent>
-                    <PopoverHeader {...popoverHeaderStyle}>
-                      Enter password
-                    </PopoverHeader>
-                    <PopoverArrow />
-                    <PopoverCloseButton />
-                    <PopoverBody>
-                      <PopoverFooter {...popoverFooterStyle}>
-                        <Text align='center'> ✤ step 3 of 3 ✤ </Text>
-                      </PopoverFooter>
-                    </PopoverBody> 
-                  </PopoverContent>
-          }
+              : <PopoverContent>
+                <PopoverHeader {...popoverHeaderStyle}>
+                  Enter password
+                </PopoverHeader>
+                <PopoverArrow />
+                <PopoverCloseButton />
+                <PopoverBody>
+                  <PopoverFooter {...popoverFooterStyle}>
+                    <Text align='center'> ✤ step 3 of 3 ✤ </Text>
+                  </PopoverFooter>
+                </PopoverBody>
+              </PopoverContent>
+        }
       </Popover>
     </>
   ); else return (
-    <Button {...connectbuttonStyle} onClick={() => { resetStatus(); signOut({redirect: false})}}>
+    <Button {...connectbuttonStyle} onClick={() => { resetStatus(); signOut({ redirect: false }) }}>
       Disconnect
     </Button>
   );
