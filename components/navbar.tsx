@@ -7,7 +7,7 @@ import Logo from './logo';
 import { useState, useContext, useEffect, useRef } from 'react';
 import NextLink from 'next/link';
 import { navHeight } from '../global-variables';
-// import { useHasNamiExtension } from '../hooks/has-nami-extension'
+import type { User } from "next-auth"
 import { Blockfrost, Lucid, WalletApi } from "lucid-cardano";
 import {
   Box,
@@ -44,7 +44,7 @@ import {
 
 import { FaGithub } from 'react-icons/fa';
 import { useSession, signIn, signOut } from 'next-auth/react';
-import type { SupportedWallets, jwtUser } from '../types/types'
+import type { SupportedWallets } from '../types/types'
 import { LucidContext } from '../context/LucidContext'
 
 import * as yup from "yup";
@@ -128,6 +128,7 @@ const ConnectButton = () => {
   const cancelRefWrongNetwork = useRef(null)
   
   const resetStatus = () => {
+    // why setTimeout? Well because there is a slight delay in closing of Popover.
     setTimeout(() => {
       setWalletConnected(false);
       setStep3(false);
@@ -326,7 +327,7 @@ const ConnectButton = () => {
                         validationSchema={createPasswordSchema}
                         onSubmit={async (values, actions) => {
                           const walletAddress = await lucidContext!.lucid!.wallet.address()
-                          const cred: jwtUser = {id: walletAddress, password: values.password}
+                          const cred: User = {id: walletAddress, password: values.password}
                           // spread is used because: https://bobbyhadz.com/blog/typescript-index-signature-for-type-is-missing-in-type
                           const res = await signIn('credentials', { ...cred, redirect: false })
                           console.log(res)

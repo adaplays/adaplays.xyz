@@ -1,5 +1,4 @@
 import type { NextPage } from 'next'
-import type { jwtUser } from 'types/types'
 import { useSession } from 'next-auth/react'
 import { Text } from '@chakra-ui/react';
 
@@ -19,7 +18,8 @@ const Home: NextPage = () => {
       </Text>
     );
   else {
-    const userData = data!.user as jwtUser
+    const userData = data!.user
+    console.log(userData)
     return (<Text>{userData.id} {userData.password}</Text>);
   }
 }

@@ -3,7 +3,6 @@
 import NextAuth, { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 import type { User } from "next-auth"
-import type { jwtUser } from 'types/types'
 
 export const authOptions: NextAuthOptions = {
   // Credentials provider can only be used if JSON Web Tokens are enabled for sessions.
@@ -40,17 +39,17 @@ export const authOptions: NextAuthOptions = {
       // You can pass any HTML attribute to the <input> tag through the object.
       credentials: {},
       async authorize(credentials, req) {
-        const {id, password} = credentials as jwtUser
+        const user = credentials as User
         // You need to provide your own logic here that takes the credentials
         // submitted and returns either a object representing a user or value
         // that is false/null if the credentials are invalid.
         // e.g. return { id: 1, name: 'J Smith', email: 'jsmith@example.com' }
         // You can also use the `req` object to obtain additional parameters
         // (i.e., the request IP address)
-        if (id !== 'yourWalletAddress' || password !== 'HelloS#d31nk') {
+        if (user.id !== 'enterYourWalletAddress' || user.password !== 'H33L0!nternet') {
           return null;
         }
-        return { id, password } as jwtUser
+        return user
       },
     })
   ],
