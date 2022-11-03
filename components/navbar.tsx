@@ -105,6 +105,7 @@ const ConnectButton = () => {
   const lucidContext = useContext(LucidContext)
   const [walletConnected, setWalletConnected] = useState<boolean>(false)
   const [selectWalletTapped, setSelectWalletTapped] = useState<boolean>(false)
+  const [isDisconnecting, setIsDisconnecting] = useState<boolean>(false)
 
   // I have two alert setup, one fires up when selected wallet is not installed in the browser and other one when enabled wallet is on wrong network
   const walletNotFound = useDisclosure()
@@ -287,7 +288,7 @@ const ConnectButton = () => {
       </Popover>
     </>
   ); else return (
-    <Button {...connectbuttonStyle} onClick={() => { resetStatus(); signOut({ redirect: false }) }}>
+    <Button isLoading={isDisconnecting} {...connectbuttonStyle} onClick={() => { setIsDisconnecting(true); resetStatus(); signOut({ redirect: false }); setIsDisconnecting(false) }}>
       Disconnect
     </Button>
   );
