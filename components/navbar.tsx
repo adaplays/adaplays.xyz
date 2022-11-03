@@ -119,6 +119,7 @@ const ConnectButton = () => {
     setTimeout(() => {
       setWalletConnected(false);
       setSelectWalletTapped(false);
+      setIsDisconnecting(false);
     }, 200)
   }
   const supportedWallets: SupportedWallets[] = ['nami', 'eternl']
@@ -289,7 +290,7 @@ const ConnectButton = () => {
       </Popover>
     </>
   ); else return (
-    <Button {...connectbuttonStyle} onClick={() => { setIsDisconnecting(true); resetStatus(); signOut({ redirect: false }); setIsDisconnecting(false) }} isLoading={isDisconnecting} >
+    <Button {...connectbuttonStyle} onClick={() => { setIsDisconnecting(true); resetStatus(); signOut({ redirect: false }) }} isLoading={isDisconnecting} >
       Disconnect
     </Button>
   );
