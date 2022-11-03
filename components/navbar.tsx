@@ -1,5 +1,6 @@
 // TODO
 // - All the preview, preprod & testnet have same id of 0, so logic should be fine only when mainnet is desired.
+// My `isDisconnecting` doesn't seem to work.
 
 import type { User } from "next-auth"
 import type { SupportedWallets } from '../types/types'
@@ -288,7 +289,7 @@ const ConnectButton = () => {
       </Popover>
     </>
   ); else return (
-    <Button isLoading={isDisconnecting} {...connectbuttonStyle} onClick={() => { setIsDisconnecting(true); resetStatus(); signOut({ redirect: false }); setIsDisconnecting(false) }}>
+    <Button {...connectbuttonStyle} onClick={() => { setIsDisconnecting(true); resetStatus(); signOut({ redirect: false }); setIsDisconnecting(false) }} isLoading={isDisconnecting} >
       Disconnect
     </Button>
   );
