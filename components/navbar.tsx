@@ -290,7 +290,7 @@ const ConnectButton = () => {
       </Popover>
     </>
   ); else return (
-    <Button {...connectbuttonStyle} onClick={() => { setIsDisconnecting(true); resetStatus(); signOut({ redirect: false }) }} isLoading={isDisconnecting} >
+    <Button {...connectbuttonStyle} onClick={() => { setIsDisconnecting(true); signOut({ redirect: false }); resetStatus(); }} isLoading={isDisconnecting} >
       Disconnect
     </Button>
   );
