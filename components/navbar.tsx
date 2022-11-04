@@ -1,6 +1,5 @@
 // TODO
 // - All the preview, preprod & testnet have same id of 0, so logic should be fine only when mainnet is desired.
-// My `isDisconnecting` doesn't seem to work.
 
 import type { User } from "next-auth"
 import type { SupportedWallets } from '../types/types'
@@ -38,6 +37,7 @@ import { Field, Form, Formik } from 'formik';
 import Logo from './logo';
 import * as yup from "yup";
 import YupPassword from 'yup-password'
+import { disconnect } from "process";
 YupPassword(yup)
 
 export default function Navbar() {
@@ -119,7 +119,6 @@ const ConnectButton = () => {
     setTimeout(() => {
       setWalletConnected(false);
       setSelectWalletTapped(false);
-      setIsDisconnecting(false);
     }, 200)
   }
   const supportedWallets: SupportedWallets[] = ['nami', 'eternl']
@@ -128,7 +127,7 @@ const ConnectButton = () => {
     password: yup
       .string()
       .required('Please enter your password')
-      .min(8, "Must be atleast 8 characters")
+      .min(10, "Must be atleast 10 characters")  // following recommendation from: https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-132.pdf
       .max(32, "Must be atmost 32 characters")
       .minLowercase(1, "Must contain atleast 1 lowercase character")
       .minUppercase(1, "Must contain atleast 1 uppercase character")
@@ -162,6 +161,13 @@ const ConnectButton = () => {
         return (!!window.cardano?.eternl);
       }
     }
+  }
+
+  const disconnecting = async () => {
+    setIsDisconnecting(true);
+    resetStatus();
+    await signOut({ redirect: false });  
+    setIsDisconnecting(false);
   }
 
   const connectWallet = async (walletName: SupportedWallets) => {
@@ -290,7 +296,7 @@ const ConnectButton = () => {
       </Popover>
     </>
   ); else return (
-    <Button {...connectbuttonStyle} onClick={() => { setIsDisconnecting(true); signOut({ redirect: false }); resetStatus(); }} isLoading={isDisconnecting} >
+    <Button {...connectbuttonStyle} onClick={() =>  disconnecting()} isLoading={isDisconnecting} >
       Disconnect
     </Button>
   );
