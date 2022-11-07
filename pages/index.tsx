@@ -14,7 +14,6 @@ import type { NextPage } from 'next'
 // import Encrypt from 'utils/encrypt'
 // import GenerateKey from 'utils/generate-key'
 import NextLink from 'next/link'
-import { getWidth } from 'utils/get-width'
 import { brandTextBorder } from 'theme/simple'
 import { AiOutlineRight } from 'react-icons/ai'
 
