@@ -9,12 +9,16 @@ import {  Lucid } from 'lucid-cardano'
 import { useState } from 'react';
 import { LucidContext } from '../context/LucidContext'
 import { ILucidContext } from '../types/types';
+import { headingTheme } from 'theme/components/heading'
 
 const theme = extendTheme({
   fonts: {
     heading: `'JetBrains Mono', monospace`,
     body: `'JetBrains Mono', monospace`,
   },
+  components: {
+    Heading: headingTheme,
+  }
 })
 
 // https://stackoverflow.com/questions/73668032/nextauth-type-error-property-session-does-not-exist-on-type

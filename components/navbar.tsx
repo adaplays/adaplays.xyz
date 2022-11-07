@@ -9,6 +9,7 @@ import NextLink from 'next/link';
 import { navHeight } from '../global-variables';
 import { Blockfrost, Lucid, WalletApi } from "lucid-cardano";
 import {
+  Heading,
   Flex,
   Text,
   Icon,
@@ -38,6 +39,7 @@ import Logo from './logo';
 import * as yup from "yup";
 import YupPassword from 'yup-password'
 YupPassword(yup)
+import { brandButtonStyle } from 'theme/simple'
 
 export default function Navbar() {
   const [logoHover, setLogoHover] = useState<boolean>(false);
@@ -62,9 +64,9 @@ export default function Navbar() {
           onMouseLeave={() => setLogoHover(false)}
         >
           <HStack>
-            <Text fontWeight='bold' fontSize='xl' position='relative' left='10px' bg='white' zIndex='1' borderRightRadius='full'>
+            <Heading variant='brand' position='relative' left='10px' bg='white' zIndex='1' borderRightRadius='full'>
               adaplays
-            </Text>
+            </Heading>
             <Logo />
           </HStack>
           {/* <Logo logoHover={logoHover} /> */}
@@ -135,10 +137,7 @@ const ConnectButton = () => {
     confirmPassword: yup.string().oneOf([yup.ref('password'), null], "Passwords must match").required('Please confirm your password')
   })
 
-  const connectbuttonStyle = {
-    variant: 'outline',
-    borderColor: 'black',
-  }
+  const connectbuttonStyle = brandButtonStyle
 
   const popoverHeaderStyle = {
     align: 'center',
