@@ -46,9 +46,9 @@ export default function Navbar() {
 
   return (
     <Flex
-      position="sticky"
-      top="0"
-      zIndex='docked'
+      // position="sticky"
+      // top="0"
+      // zIndex='docked'
       bg="white"
       borderBottom={1}
       borderStyle='solid'
