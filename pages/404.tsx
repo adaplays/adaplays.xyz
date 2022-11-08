@@ -5,7 +5,7 @@ import { navHeight } from '../global-variables'
 const FourOhFour: NextPage = () => {
   return (
       <Flex direction='column' justify='center' h={`calc(100vh - ${navHeight})`} align='center'>
-        <Heading fontSize='xl'> 
+        <Heading variant='brand'> 
           404 | This page could not be found
         </Heading>
       </Flex>
