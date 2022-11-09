@@ -16,8 +16,18 @@ import type { NextPage } from 'next'
 import NextLink from 'next/link'
 import { brandTextBorder } from 'theme/simple'
 import { AiOutlineRight } from 'react-icons/ai'
+import { LucidContext } from 'context/LucidContext'
+import { useSession, signOut } from 'next-auth/react'
+import { useContext } from 'react';
 
 const Home: NextPage = () => {
+  const { status } = useSession()
+  const lucidContext = useContext(LucidContext)
+
+  if (status === 'authenticated' && lucidContext?.lucid == null) {
+    signOut({ redirect: false })
+  }
+
   interface gameType {
     name: string,
     href: string,
