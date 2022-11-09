@@ -1,19 +1,16 @@
 import type { NextPage } from 'next'
-import { useSession, signOut } from 'next-auth/react'
+import { useSession } from 'next-auth/react'
 import { Heading, Flex, Spinner } from '@chakra-ui/react';
 import { navHeight } from 'global-variables'
-import { LucidContext } from 'context/LucidContext'
-// import { FC } from 'react'
 import type { ReactNode } from 'react'
-import { useContext } from 'react';
 
 interface Props {
   children: ReactNode
 }
 
-const ValidateGate: NextPage<Props> = ({children}) => {
+const ValidateGate: NextPage<Props> = ({ children }) => {
+
   const { status } = useSession()
-  const lucidContext = useContext(LucidContext)
 
   if (status === 'unauthenticated')
     return (
@@ -32,21 +29,9 @@ const ValidateGate: NextPage<Props> = ({children}) => {
       </Flex>
     );
   else {
-    // mentioning it here aswell as this `signOut` is async function.
-    if (lucidContext?.lucid == null) {
-      signOut({ redirect: false })
-      return (
-        <Flex direction='column' justify='center' h={`calc(100vh - ${navHeight})`} align='center'>
-          <Heading variant='brand'>
-            Restricted: Kindly connect first.
-          </Heading>
-        </Flex>
-    );
-    } else {
-      return (
+    return (
       <>{children}</>
-      );
-    }
+    );
   }
 }
 

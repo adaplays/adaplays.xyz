@@ -24,7 +24,8 @@
     "react-dom": "18.2.0",
     "react-icons": "^4.6.0",
     "yup": "^0.32.11",
-    "yup-password": "^0.2.2"
+    "yup-password": "^0.2.2",
+    "zustand": "^4.1.4"
   },
   "devDependencies": {
     "@types/node": "18.11.3",

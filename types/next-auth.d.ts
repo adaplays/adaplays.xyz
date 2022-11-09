@@ -1,4 +1,6 @@
+import { WalletApi } from "lucid-cardano"
 import NextAuth from "next-auth"
+import { SupportedWallets } from "./types"
 
 declare module "next-auth" {
   /**
@@ -10,6 +12,7 @@ declare module "next-auth" {
 
   interface User {
     id: string,  // same as wallet address
-    password: string
+    password: string,
+    wallet: SupportedWallets,
   }
 }

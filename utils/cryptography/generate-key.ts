@@ -30,7 +30,7 @@ const getKeyMaterial = (password: string) => {
   );
 }
 
-const GenerateKey = async (password: string, gIter?: number, gIv?: Uint8Array) => {
+const generateKey = async (password: string, gIter?: number, gIv?: Uint8Array) => {
   const keyMaterial: CryptoKey = await getKeyMaterial(password)
   const addIter: Uint16Array = window.crypto.getRandomValues(new Uint16Array(1))
   const iter: number = gIter ? gIter : 2048_000 + addIter[0]
@@ -50,4 +50,4 @@ const GenerateKey = async (password: string, gIter?: number, gIv?: Uint8Array) =
   return { iv, iter, key }
 }
 
-export default GenerateKey
+export default generateKey

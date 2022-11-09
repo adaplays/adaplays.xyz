@@ -4,10 +4,10 @@
 import type { User } from "next-auth"
 import type { SupportedWallets } from '../types/types'
 
-import { useState, useContext, useRef } from 'react';
+import { useState, useRef } from 'react';
 import NextLink from 'next/link';
 import { navHeight } from '../global-variables';
-import { Blockfrost, Lucid, WalletApi } from "lucid-cardano";
+import { WalletApi, Lucid } from "lucid-cardano";
 import {
   Heading,
   Flex,
@@ -32,7 +32,6 @@ import {
 } from '@chakra-ui/react';
 import { FaGithub } from 'react-icons/fa';
 import { useSession, signIn, signOut } from 'next-auth/react';
-import { LucidContext } from '../context/LucidContext'
 import SimpleAlert from './simple-alert';
 import { Field, Form, Formik } from 'formik';
 import Logo from './logo';
@@ -40,6 +39,7 @@ import * as yup from "yup";
 import YupPassword from 'yup-password'
 YupPassword(yup)
 import { brandButtonStyle } from 'theme/simple'
+import { getApi, getLucid } from "utils/lucid/lucid";
 
 export default function Navbar() {
   const [logoHover, setLogoHover] = useState<boolean>(false);
@@ -104,7 +104,7 @@ export default function Navbar() {
 
 const ConnectButton = () => {
   const { status } = useSession()
-  const lucidContext = useContext(LucidContext)
+  const [_walletName, _setWalletName] = useState<SupportedWallets>('nami')
   const [walletConnected, setWalletConnected] = useState<boolean>(false)
   const [selectWalletTapped, setSelectWalletTapped] = useState<boolean>(false)
   const [isDisconnecting, setIsDisconnecting] = useState<boolean>(false)
@@ -164,7 +164,7 @@ const ConnectButton = () => {
   const disconnecting = async () => {
     setIsDisconnecting(true);
     resetStatus();
-    await signOut({ redirect: false });  
+    await signOut({ redirect: false });
     setIsDisconnecting(false);
   }
 
@@ -173,29 +173,13 @@ const ConnectButton = () => {
       walletNotFound.onOpen();
     } else {
       try {
-        let api: WalletApi | undefined = undefined
-        switch (walletName) {
-          case "nami": {
-            api = await window.cardano.nami.enable();
-            break;
-          }
-          case "eternl": {
-            api = await window.cardano.eternl.enable();
-            break;
-          }
-        }
+        const api: WalletApi = await getApi(walletName)
         // In case the above connection fails, the whole component fails so I guess nothing to worry.
         const networkId = await api.getNetworkId();
         if (networkId !== 0) {
           wrongNetwork.onOpen()
         } else {
-          // Assumes you are in a browser environment
-          const newLucid = await Lucid.new(
-            new Blockfrost("/api/blockfrost/0", ""),  // project-id header will be set by redirect
-            "Preprod"
-          )
-          newLucid.selectWallet(api)
-          lucidContext!.setLucid(newLucid)
+          _setWalletName(walletName)
           setWalletConnected(await window.cardano.nami.isEnabled())
         }
       } catch (e) {
@@ -253,8 +237,9 @@ const ConnectButton = () => {
                 initialValues={{ password: '', confirmPassword: '' }}
                 validationSchema={createPasswordSchema}
                 onSubmit={async (values, actions) => {
-                  const walletAddress = await lucidContext!.lucid!.wallet.address()
-                  const cred: User = { id: walletAddress, password: values.password }
+                  const lucid: Lucid = await getLucid(_walletName)
+                  const walletAddress = await lucid.wallet.address()
+                  const cred: User = { id: walletAddress, password: values.password, wallet: _walletName }
                   // spread is used because: https://bobbyhadz.com/blog/typescript-index-signature-for-type-is-missing-in-type
                   await signIn('credentials', { ...cred, redirect: false })
                   actions.resetForm()
@@ -294,7 +279,7 @@ const ConnectButton = () => {
       </Popover>
     </>
   ); else return (
-    <Button {...connectbuttonStyle} onClick={() =>  disconnecting()} isLoading={isDisconnecting} >
+    <Button {...connectbuttonStyle} onClick={() => disconnecting()} isLoading={isDisconnecting} >
       Disconnect
     </Button>
   );

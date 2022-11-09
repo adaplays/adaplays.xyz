@@ -1,13 +1,10 @@
 import {
   Box,
-  Button,
   Text,
   Heading,
   List,
   ListItem,
   ListIcon,
-  OrderedList,
-  UnorderedList,
 } from '@chakra-ui/react'
 import type { NextPage } from 'next'
 // import Decrypt from 'utils/decrypt'
@@ -16,17 +13,8 @@ import type { NextPage } from 'next'
 import NextLink from 'next/link'
 import { brandTextBorder } from 'theme/simple'
 import { AiOutlineRight } from 'react-icons/ai'
-import { LucidContext } from 'context/LucidContext'
-import { useSession, signOut } from 'next-auth/react'
-import { useContext } from 'react';
 
 const Home: NextPage = () => {
-  const { status } = useSession()
-  const lucidContext = useContext(LucidContext)
-
-  if (status === 'authenticated' && lucidContext?.lucid == null) {
-    signOut({ redirect: false })
-  }
 
   interface gameType {
     name: string,
@@ -74,7 +62,7 @@ const Home: NextPage = () => {
       <List mt='10px'>
         {games.map((elem, ix) => {
           return (
-            <ListItem key={ix} _hover={{color: 'gray.600'}} >
+            <ListItem key={ix} _hover={{ color: 'gray.600' }} >
               <ListIcon as={AiOutlineRight} />
               <NextLink href={elem.href} passHref>
                 {elem.name}

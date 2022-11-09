@@ -16,7 +16,7 @@
 // export default Encrypt
 //
 
-const Encrypt = async (message: string, key: CryptoKey, gIv?: Uint8Array) => {
+const encrypt = async (message: string, key: CryptoKey, gIv?: Uint8Array) => {
   let enc = new TextEncoder();
   const iv: Uint8Array = gIv ? gIv : window.crypto.getRandomValues(new Uint8Array(12))
   const encrypted = await window.crypto.subtle.encrypt(
@@ -27,4 +27,4 @@ const Encrypt = async (message: string, key: CryptoKey, gIv?: Uint8Array) => {
   return { iv, encrypted }
 }
 
-export default Encrypt
+export default encrypt
