@@ -4,9 +4,6 @@ import type { User } from "next-auth"
 
 export const authOptions: NextAuthOptions = {
   // Credentials provider can only be used if JSON Web Tokens are enabled for sessions.
-  session: {
-    maxAge: 1 * 60 * 60,  // 1 hour
-  },
   // session: {
   //   strategy: "jwt",  // this strategy is also the default one, see: https://next-auth.js.org/getting-started/upgrade-v4#session-strategy
   // },
