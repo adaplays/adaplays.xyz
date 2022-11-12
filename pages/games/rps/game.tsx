@@ -10,13 +10,13 @@ import {
   HStack,
 } from '@chakra-ui/react'
 import { navHeight } from 'global-variables'
-import { addScript, getLucid } from 'utils/lucid/lucid'
+import { getLucid } from 'utils/lucid/lucid'
 import { useSession } from 'next-auth/react'
-import { RpsScript, validatorAddress, validatorRefUtxo, moves, moveToInt } from 'constants/games/rps/constants';
-import { Lucid, UTxO, Data, PlutusData, Constr, utf8ToHex, TxHash, Address, hexToUtf8 } from 'lucid-cardano'
+import { validatorAddress, validatorRefUtxo, moves, moveToInt } from 'constants/games/rps/constants';
+import { Lucid, UTxO, Data, PlutusData, Constr, utf8ToHex, hexToUtf8 } from 'lucid-cardano'
 import { useEffect, useState, useCallback } from 'react'
-import { addDatumMoveB, getGameMatchResult, getGameMatchResultIndex, getGameMoveDuration, getGamePolicyId, getGameSecondMoveIndex, getGameSecondMoveValue, getGameStake, getGameStartTime, getGameTokenName, getGameTxHash, getGameTxIx, getMove } from 'utils/games/rps/utils'
-import { Move } from 'types/games/rps/types'
+import { addDatumMoveB, getGameFirstMove, getGameMatchResult, getGameMatchResultIndex, getGameMatchResultValue, getGameMoveDuration, getGamePolicyId, getGameSecondMoveIndex, getGameSecondMoveValue, getGameStake, getGameStartTime, getGameTokenName, getGameTxHash, getGameTxIx, getMove } from 'utils/games/rps/utils'
+import { MatchResult, Move } from 'types/games/rps/types'
 import { FaHandPaper, FaHandRock, FaHandScissors, FaQuestion } from 'react-icons/fa';
 import { IconType } from 'react-icons'
 import { Timer } from 'components/timer'
@@ -33,23 +33,21 @@ BigInt.prototype.toJSON = function() { return this.toString() }
 
 const Game = () => {
   const [waiting, setWaiting] = useState<boolean>(true)
-  const [completed, setCompleted] = useState<boolean>(false)  // better redirect to a new page so that timers etc are completely cleared. New page will also have options.
   const [invalid, setInvalid] = useState<boolean>(false)
-  const { status } = useSession()
   const [utxo, setUtxo] = useState<UTxO | null>(null)
-  const { data } = useSession()
+  const { status, data } = useSession()
   const router = useRouter()
   const query = router.query;
   const moveIconMap: Record<Move, IconType> = { "Rock": FaHandRock, "Paper": FaHandPaper, "Scissors": FaHandScissors }
 
-  const gameCompleted = () => {
+  const gameCompleted = useCallback(() => {
     router.push({
       pathname: '/games/rps',
       query: {
         completed: "true",
       }
     })
-  }
+  }, [router])
 
   const getDesiredGameUtxo = useCallback(async () => {
     const lucid: Lucid = await getLucid(data!.user.wallet)
@@ -76,23 +74,21 @@ const Game = () => {
   useEffect(() => {
     const interval = setInterval(async () => {
       console.log('running timer instance')
-      if (completed) {
-        clearInterval(interval)
-      } else {
-        if (status === 'authenticated') {
-          const _utxo = await getDesiredGameUtxo()
-          if (_utxo) {
-            if (!utxo || (JSON.stringify(utxo) !== JSON.stringify(_utxo))) {  // their is no utxo yet or we have an updated one
-              setUtxo(_utxo)
-              setWaiting(false)
-            }
+      if (status === 'authenticated') {
+        const _utxo = await getDesiredGameUtxo()
+        if (_utxo) {
+          if (!utxo || (JSON.stringify(utxo) !== JSON.stringify(_utxo))) {  // their is no utxo yet or we have an updated one
+            setUtxo(_utxo)
+            setWaiting(false)
           }
+        } else if (utxo) {  // that means we already have utxo set but now we are unable to find it, that means game got completed
+          gameCompleted()
         }
 
       }
     }, 25 * 1000)
     return () => clearInterval(interval)
-  }, [status, utxo, getDesiredGameUtxo, completed])
+  }, [status, utxo, getDesiredGameUtxo, gameCompleted])
 
   // Once a move has been made, we wait for a new UTxO.
   const Waiting = () => (
@@ -115,6 +111,7 @@ const Game = () => {
       </Flex>
     )
   }
+
   // First player options.
   const PlayerA = () => {
     const [move, setMove] = useState<Move | null>(null)
@@ -145,9 +142,8 @@ const Game = () => {
         const { paymentCredential } = lucid.utils.getAddressDetails(await lucid.wallet.address())
         const tx = await lucid
           .newTx()
-          // .readFrom([ref!])
+          .readFrom([validatorRefUtxo])
           .collectFrom([utxo!], Data.to(new Constr(2, [])))
-          .attachSpendingValidator(RpsScript)
           .addSignerKey(paymentCredential!.hash)
           .validFrom(deadline + 1000)  // adding 1 second, though with 1 milisecond it should work but somehow doesnt... got best at 0.2 second which also felt as unreliable.
           .mintAssets({ [unit]: -1n }, Data.to(new Constr(1, [])))
@@ -156,7 +152,7 @@ const Game = () => {
         const signedTx = await tx.sign().complete()
         try {
           await signedTx.submit()  // maybe some use can be made for txhash.
-          setCompleted(true)
+          gameCompleted()
         } catch (e) {
           alert("Their was an error, kindly retry. Error could have been caused by system clock not being accurate enough")
           console.log(e)
@@ -202,16 +198,16 @@ const Game = () => {
               </Flex>
             </GridItem>
             <GridItem area='choice'>
-            {
-              timerDone && (
-                <Flex justify='center' h='full' align='center'>
-                  <Button {...brandButtonStyle} onClick={() => getFundsBackA(deadline)}>
-                    Get your funds back
-                  </Button>
+              {
+                timerDone && (
+                  <Flex justify='center' h='full' align='center'>
+                    <Button {...brandButtonStyle} onClick={() => getFundsBackA(deadline)}>
+                      Get your funds back
+                    </Button>
 
-                </Flex>
-              )
-            }
+                  </Flex>
+                )
+              }
             </GridItem>
           </Grid>
         )
@@ -260,9 +256,8 @@ const Game = () => {
       const deadline = Number(startTime + duration)
       const tx = await lucid
         .newTx()
-        // .readFrom([ref!])
+        .readFrom([validatorRefUtxo])
         .collectFrom([utxo!], Data.to(new Constr(0, [new Constr(moveToInt[move], [])])))
-        .attachSpendingValidator(RpsScript)
         .payToContract(validatorAddress, { inline: Data.to(addDatumMoveB(datum, move)) }, { lovelace: 2n * utxo!.assets['lovelace'], [unit]: 1n })
         .addSignerKey(paymentCredential!.hash)
         .validFrom(fromTime)
@@ -273,7 +268,8 @@ const Game = () => {
         await signedTx.submit()  // maybe some use can be made for txhash.
         reset()
       } catch (e) {
-        alert("Their was an error, kindly retry. Error could have been caused by system clock not being accurate enough. Error description: " + e)
+        alert("Their was an error, kindly retry. Error could have been caused by system clock not being accurate enough.")
+        console.log(e)
       }
     }
     try {
@@ -301,47 +297,47 @@ const Game = () => {
             </GridItem>
             <GridItem area='choice'>
               <Flex justify='center' h='full' align='center'>
-              {
-                timerDone
-                ? 
-                  <Heading variant='brand' textAlign='center'>
-                  :( Timer is done
-                  </Heading>
-                :
-                  <Formik
-                    initialValues={{ move: '' }}
-                    validationSchema={radioSchema}
-                    onSubmit={async (values, actions) => {
-                      await makeMoveB(values.move as Move)
-                      actions.resetForm()
-                    }}
-                  >
-                    {(props) => (
-                      <Form>
-                        <FormControl isInvalid={!!props.errors.move && props.touched.move} mt='10px' borderColor='black'>
-                          <FormLabel textAlign='center' fontWeight='bold'>Enter your move</FormLabel>
-                          <Field as={RadioGroup} name='move'>
-                            <HStack spacing='15px' >
-                              {moves.map((elem, ix) => (<Field as={Radio} key={ix} value={elem} borderColor='black' _checked={{ bg: 'black' }} >{elem}</Field>))}
-                            </HStack>
-                          </Field>
-                          <FormErrorMessage>{props.errors.move}</FormErrorMessage>
-                        </FormControl>
-                        <Flex justify='center'>
-                          <Button
-                            mt={'10px'}
-                            {...brandButtonStyle}
-                            isLoading={props.isSubmitting}
-                            type='submit'
-                            mb={'10px'}
-                          >
-                            Submit
-                          </Button>
-                        </Flex>
-                      </Form>
-                    )}
-                  </Formik>
-              }
+                {
+                  timerDone
+                    ?
+                    <Heading variant='brand' textAlign='center'>
+                      :( Timer is done
+                    </Heading>
+                    :
+                    <Formik
+                      initialValues={{ move: '' }}
+                      validationSchema={radioSchema}
+                      onSubmit={async (values, actions) => {
+                        await makeMoveB(values.move as Move)
+                        actions.resetForm()
+                      }}
+                    >
+                      {(props) => (
+                        <Form>
+                          <FormControl isInvalid={!!props.errors.move && props.touched.move} mt='10px' borderColor='black'>
+                            <FormLabel textAlign='center' fontWeight='bold'>Enter your move</FormLabel>
+                            <Field as={RadioGroup} name='move'>
+                              <HStack spacing='15px' >
+                                {moves.map((elem, ix) => (<Field as={Radio} key={ix} value={elem} borderColor='black' _checked={{ bg: 'black' }} >{elem}</Field>))}
+                              </HStack>
+                            </Field>
+                            <FormErrorMessage>{props.errors.move}</FormErrorMessage>
+                          </FormControl>
+                          <Flex justify='center'>
+                            <Button
+                              mt={'10px'}
+                              {...brandButtonStyle}
+                              isLoading={props.isSubmitting}
+                              type='submit'
+                              mb={'10px'}
+                            >
+                              Submit
+                            </Button>
+                          </Flex>
+                        </Form>
+                      )}
+                    </Formik>
+                }
               </Flex>
             </GridItem>
           </Grid>
@@ -358,7 +354,6 @@ const Game = () => {
 
           } else {
             const lucid: Lucid = await getLucid(data!.user.wallet)
-            const datum: PlutusData = Data.from(utxo!.datum!)
             const policyId = getGamePolicyId(datum)
             const tokenName = getGameTokenName(datum)
             const unit = policyId + tokenName
@@ -366,9 +361,8 @@ const Game = () => {
             const { paymentCredential } = lucid.utils.getAddressDetails(await lucid.wallet.address())
             const tx = await lucid
               .newTx()
-              // .readFrom([ref!])
+              .readFrom([validatorRefUtxo])
               .collectFrom([utxo!], Data.to(new Constr(3, [])))
-              .attachSpendingValidator(RpsScript)
               .addSignerKey(paymentCredential!.hash)
               .validFrom(deadline + 1000)
               .mintAssets({ [unit]: -1n }, Data.to(new Constr(1, [])))
@@ -377,7 +371,7 @@ const Game = () => {
             const signedTx = await tx.sign().complete()
             try {
               await signedTx.submit()  // maybe some use can be made for txhash.
-              setCompleted(true)
+              gameCompleted()
             } catch (e) {
               alert("Their was an error, kindly retry. Error could have been caused by system clock not being accurate enough")
               console.log(e)
@@ -416,28 +410,77 @@ const Game = () => {
               {MoveComponent(moveIconMap[getGameSecondMoveValue(datum)], false)}
             </GridItem>
             <GridItem area='choice'>
-            {
-              timerDone && (
-                <Flex justify='center' h='full' align='center'>
-                  <Button {...brandButtonStyle} onClick={() => aTimeoutTakeB(deadline)}>
-                    Take pool funds!
-                  </Button>
+              {
+                timerDone && (
+                  <Flex justify='center' h='full' align='center'>
+                    <Button {...brandButtonStyle} onClick={() => aTimeoutTakeB(deadline)}>
+                      Take pool funds!
+                    </Button>
 
-                </Flex>
-              )
-            }
+                  </Flex>
+                )
+              }
             </GridItem>
           </Grid>
         )
-      } else {
-        return null
+      } else {  // We have made a move, first player has also replied. So it is either draw or we won as game utxo still exists
+        const moveA = getGameFirstMove(datum)
+        const moveB = getGameSecondMoveValue(datum)
+        const matchResult: MatchResult = getGameMatchResultValue(datum)
+
+        const bEndGame = async () => {
+
+          const lucid: Lucid = await getLucid(data!.user.wallet)
+          const policyId = getGamePolicyId(datum)
+          const tokenName = getGameTokenName(datum)
+          const unit = policyId + tokenName
+          const mintingPolicy = getMintingPolicy(getGameTxHash(datum), Number(getGameTxIx(datum)), hexToUtf8(tokenName))
+          const { paymentCredential } = lucid.utils.getAddressDetails(await lucid.wallet.address())
+          const tx = await lucid
+            .newTx()
+            .readFrom([validatorRefUtxo])
+            .collectFrom([utxo!], Data.to(new Constr(matchResult === "Draw" ? 4 : 5, [])))
+            .addSignerKey(paymentCredential!.hash)
+            .mintAssets({ [unit]: -1n }, Data.to(new Constr(1, [])))
+            .attachMintingPolicy(mintingPolicy)
+            .complete()
+          const signedTx = await tx.sign().complete()
+          try {
+            await signedTx.submit()  // maybe some use can be made for txhash.
+            gameCompleted()
+          } catch (e) {
+            alert("Their was an error, kindly retry. Error could have been caused by system clock not being accurate enough")
+            console.log(e)
+          }
+        }
+        return (
+          <Grid
+            templateAreas={`"moveA moveB"
+                            "choice choice"`}
+            gridTemplateColumns={'1fr 1fr'}
+            gridTemplateRows={'3fr 1fr'}
+            h={`calc(100vh - ${navHeight})`}
+          >
+            <GridItem area={'moveA'} >
+              {MoveComponent(moveIconMap[moveA], true)}
+            </GridItem>
+            <GridItem area={'moveB'}>
+              {MoveComponent(moveIconMap[moveB], false)}
+            </GridItem>
+            <GridItem area='choice'>
+              <Flex justify='center' h='full' align='center'>
+                <Button {...brandButtonStyle} onClick={() => bEndGame()}>
+                  {matchResult === 'WinB' ? "You won! Get pool funds" : "Its Draw! Get your funds back"}
+                </Button>
+              </Flex>
+            </GridItem>
+          </Grid>
+        )
       }
     } catch {
       setInvalid(true)
       return null
     }
-
-
   }
 
   return (
@@ -454,15 +497,9 @@ const Game = () => {
               You are playing an invalid game.
             </Heading>
           </Flex>
-          : completed
-            ? <Flex direction='column' justify='center' h={`calc(100vh - ${navHeight})`} align='center'>
-              <Heading variant='brand'>
-                Game is completed.
-              </Heading>
-            </Flex>
-            : waiting
-              ? <Waiting />
-              : query.player === 'A' ? <PlayerA /> : <PlayerB />
+          : waiting
+            ? <Waiting />
+            : query.player === 'A' ? <PlayerA /> : <PlayerB />
 
 
       }
@@ -471,3 +508,4 @@ const Game = () => {
 }
 
 export default Game
+//""transaction submit error ShelleyTxValidationError ShelleyBasedEraBabbage (ApplyTxError [UtxowFailure (UtxoFailure (FromAlonzoUtxoFail (OutsideValidityIntervalUTxO (ValidityInterval {invalidBefore = SJust (SlotNo 12574209), invalidHereafter = SJust (SlotNo 12574315)}) (SlotNo 12574167))))])""

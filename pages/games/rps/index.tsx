@@ -21,7 +21,7 @@ const Home: NextPage = () => {
   return (
     <ValidateGate>
       <Flex direction='column' justify='center' h={`calc(100vh - ${navHeight})`} align='center'>
-        {query?.completed === "true" ? <Heading variant='brand'>Game is completed</Heading> : null}
+        {query?.completed === "true" && <Heading variant='brand' mb='20px'>Game is completed</Heading>}
         <OptionButton message={"Create a new game"} href="/games/rps/new-game" />
         <OptionButton message="Join a new game" href='/games/rps/join-game' />
         <OptionButton message="Join a previous active game" href='/games/rps/active-games' />
