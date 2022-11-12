@@ -1,16 +1,18 @@
 import { generateKey, decrypt } from "utils/cryptography/utils";
 import { Constr, Data, fromHex, Lucid, PlutusData, toHex, TxHash, utf8ToHex, UTxO } from "lucid-cardano"
 import { getMintingPolicy } from "utils/lucid/minting-policy";
-import { moves } from "constants/games/rps/constants";
+import { intToMove, moves, moveToInt } from "constants/games/rps/constants";
+import { Move } from "types/games/rps/types";
 
 // Functions here assume that we are given a correct structure, call these inside try/catch if you may.
 
 export const getGameParams = (datum: PlutusData) => (datum as Constr<PlutusData>).fields[0]
+export const getGameStake = (datum: PlutusData) => (getGameParams(datum) as Constr<PlutusData>).fields[2] as bigint
 export const getGameStartTime = (datum: PlutusData) => (getGameParams(datum) as Constr<PlutusData>).fields[3] as bigint
 export const getGameMoveDuration = (datum: PlutusData) => (getGameParams(datum) as Constr<PlutusData>).fields[4] as bigint
 export const getGameToken = (datum: PlutusData) => (getGameParams(datum) as Constr<PlutusData>).fields[5]
-export const getGamePolicyId = (datum: PlutusData) => (getGameToken(datum) as Constr<PlutusData>).fields[0]
-export const getGameTokenName = (datum: PlutusData) => (getGameToken(datum) as Constr<PlutusData>).fields[1]
+export const getGamePolicyId = (datum: PlutusData) => (getGameToken(datum) as Constr<PlutusData>).fields[0] as string
+export const getGameTokenName = (datum: PlutusData) => (getGameToken(datum) as Constr<PlutusData>).fields[1] as string
 export const getGameTokenORef = (datum: PlutusData) => (getGameParams(datum) as Constr<PlutusData>).fields[6]
 export const getGameTxHash = (datum: PlutusData) => ((getGameTokenORef(datum) as Constr<PlutusData>).fields[0] as Constr<PlutusData>).fields[0] as TxHash
 export const getGameTxIx = (datum: PlutusData) => (getGameTokenORef(datum) as Constr<PlutusData>).fields[1] as bigint
@@ -21,6 +23,9 @@ export const getGameEncryptIv = (datum: PlutusData) => fromHex((getGameParams(da
 export const getGameMoveByteString = (datum: PlutusData) => (datum as Constr<PlutusData>).fields[1] as string
 export const getGameSecondMove = (datum: PlutusData) => (datum as Constr<PlutusData>).fields[2]
 export const getGameSecondMoveIndex = (datum: PlutusData) => (getGameSecondMove(datum) as Constr<PlutusData>).index
+export const getGameSecondMoveValue = (datum: PlutusData) => intToMove[((getGameSecondMove(datum) as Constr<PlutusData>).fields[0] as Constr<PlutusData>).index]
+export const getGameMatchResult = (datum: PlutusData) => (datum as Constr<PlutusData>).fields[3]
+export const getGameMatchResultIndex = (datum: PlutusData) => (getGameMatchResult(datum) as Constr<PlutusData>).index
 
 export const verifyNft = (lucid: Lucid, utxo: UTxO, tokenName: string) => {
   const datum = Data.from(utxo.datum!);
@@ -65,4 +70,11 @@ export const getMove = async (password: string, datum: PlutusData) => {
     }
   }
   throw "No move found"
+}
+
+// these most likely modify the original datum
+export const addDatumMoveB = (datum: PlutusData, move: Move) => {
+  let newDatum = datum;
+  (newDatum as Constr<PlutusData>).fields[2] = new Constr(0, [new Constr(moveToInt[move], [])])
+  return newDatum
 }

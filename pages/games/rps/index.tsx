@@ -1,5 +1,6 @@
 import type { NextPage } from 'next'
-import { Flex, Button } from '@chakra-ui/react';
+import { useRouter } from 'next/router'
+import { Flex, Button, Heading } from '@chakra-ui/react';
 import { navHeight } from 'global-variables'
 import NextLink from 'next/link'
 import { brandButtonStyle } from 'theme/simple'
@@ -15,9 +16,12 @@ const OptionButton = ({ message, href }: { message: string, href: string }) => {
   )
 }
 const Home: NextPage = () => {
+  const router = useRouter()
+  const query = router.query;
   return (
     <ValidateGate>
       <Flex direction='column' justify='center' h={`calc(100vh - ${navHeight})`} align='center'>
+        {query?.completed === "true" ? <Heading variant='brand'>Game is completed</Heading> : null}
         <OptionButton message={"Create a new game"} href="/games/rps/new-game" />
         <OptionButton message="Join a new game" href='/games/rps/join-game' />
         <OptionButton message="Join a previous active game" href='/games/rps/active-games' />

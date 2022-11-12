@@ -19,3 +19,5 @@ export const validatorRefUtxo: UTxO = {
 }
 
 export const moves: Move[] = ["Rock", "Paper", "Scissors"]
+export const moveToInt: Record<Move, number> = {"Rock": 0, "Paper": 1, "Scissors": 2}
+export const intToMove: Record<number, Move> = {0: "Rock", 1: "Paper", 2: "Scissors"}

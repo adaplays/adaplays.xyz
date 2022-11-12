@@ -90,7 +90,8 @@ const createGame = async (lucid: Lucid, router: NextRouter, playerBAddress: stri
       }
     })
   } catch (e) {
-    alert("Game could not be created: " + e)
+    alert("Game could not be created.")
+    console.log(e)
   }
 }
 
