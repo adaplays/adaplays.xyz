@@ -1,3 +1,4 @@
+import Countdown, { CountdownTimeDelta, CountdownRenderProps, zeroPad } from 'react-countdown'
 import { useRouter } from 'next/router'
 import ValidateGate from 'components/validate-gate'
 import {
@@ -20,7 +21,6 @@ import { addDatumMatchResult, addDatumMoveA, addDatumMoveB, getGameFirstMove, ge
 import { MatchResult, Move } from 'types/games/rps/types'
 import { FaHandPaper, FaHandRock, FaHandScissors, FaQuestion } from 'react-icons/fa';
 import { IconType } from 'react-icons'
-import { Timer } from 'components/timer'
 import { brandButtonStyle } from 'theme/simple'
 import { getMintingPolicy } from 'utils/lucid/minting-policy'
 import * as yup from "yup";
@@ -49,25 +49,32 @@ const Game = () => {
   const loseString: string = ":( You lost"
   const timerDoneString: string = ":( Timer is done"
 
-  // Four hooks for `Timer` component
+  // Countdown
   const [timerDone, setTimerDone] = useState<boolean>(false)
-  const [deadline, setDeadline] = useState<number | null>(null)
-  const [time, setTime] = useState(0);
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (timerDone || deadline === null) {
-        clearInterval(interval)
-      } else {
-        const timeRemaining = deadline - Date.now()
-        if (timeRemaining <= 0) {
-          setTimerDone(true)
-          clearInterval(interval)
-        }
-        setTime(Math.max(timeRemaining, 0))
-      }
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [deadline, setTimerDone, timerDone]);
+  const onComplete = () => {
+    setTimerDone(true)
+  }
+  const handleMount = (timeDelta: CountdownTimeDelta) => {
+    if (timeDelta.completed) {
+      onComplete();
+    }
+  }
+  const renderer = ({ days, hours, minutes, seconds }: CountdownRenderProps) => {
+    return (
+      <>
+        {Object.entries({
+          Days: days,
+          Hours: hours,
+          Minutes: minutes,
+          Seconds: seconds
+        }).map(([label, value]) => (
+          <Heading key={label} variant='brand'>
+            {label} {zeroPad(value)}
+          </Heading>
+        ))}
+      </>
+    )
+  }
 
   // Two hooks for player A specifically
   const [moveA, setMoveA] = useState<Move | null>(null)
@@ -118,7 +125,6 @@ const Game = () => {
 
   useEffect(() => {
     const interval = setInterval(async () => {
-      console.log('running timer instance')
       if (status === 'authenticated') {
         const _utxo = await getDesiredGameUtxo()
         if (_utxo) {
@@ -162,7 +168,6 @@ const Game = () => {
   // First player options.
   const PlayerA = () => {
 
-    console.log('playera renderre')
     const getFundsBackA = async () => {
 
       const _utxo = await getDesiredGameUtxo()
@@ -281,7 +286,6 @@ const Game = () => {
         const startTime = getGameStartTime(datum)
         const duration = getGameMoveDuration(datum)
         const _deadline = Number(startTime + duration)
-        if (deadline !== _deadline) setDeadline(_deadline)
         return (
           <Grid
             templateAreas={`"moveA moveB"
@@ -296,7 +300,7 @@ const Game = () => {
             <GridItem area={'moveB'}>
               <Flex direction='column' justify='flex-end' align='center' h='full'>
                 <Heading variant='brand' mb='25px'>Time remaining</Heading>
-                {Timer(time)}
+                <Countdown date={_deadline} renderer={renderer} onMount={handleMount} onComplete={onComplete} />
                 {
                   timerDone
                     ? <Heading variant='brand' textAlign='center' mt='25px'>
@@ -328,7 +332,6 @@ const Game = () => {
         const startTime = getGameStartTime(datum)
         const duration = getGameMoveDuration(datum)
         const _deadline = Number(startTime + 2n * duration)
-        if (deadline !== _deadline) setDeadline(_deadline)
         return (
           <Grid
             templateAreas={`"moveA moveB"
@@ -359,7 +362,7 @@ const Game = () => {
                           <Heading variant='brand'>
                             Time remaining
                           </Heading>
-                          <HStack>{Timer(time)}</HStack>
+                          <HStack><Countdown date={_deadline} renderer={renderer} onMount={handleMount} onComplete={onComplete} /></HStack>
                         </VStack>
                         {
                           getMatchResult(moveA!, moveB) === 'WinA'
@@ -431,8 +434,6 @@ const Game = () => {
         const startTime = getGameStartTime(datum)
         const duration = getGameMoveDuration(datum)
         const _deadline = Number(startTime + duration)
-        if (deadline !== _deadline) setDeadline(_deadline)
-        console.log('rererere')
         return (
           <Grid
             templateAreas={`"moveA moveB"
@@ -447,7 +448,7 @@ const Game = () => {
             <GridItem area={'moveB'}>
               <Flex direction='column' justify='flex-end' align='center' h='full'>
                 <Heading variant='brand' mb='25px'>Time remaining</Heading>
-                {Timer(time)}
+                <Countdown date={_deadline} renderer={renderer} onMount={handleMount} onComplete={onComplete} />
               </Flex>
             </GridItem>
             <GridItem area='choice'>
@@ -542,7 +543,6 @@ const Game = () => {
         const startTime = getGameStartTime(datum)
         const duration = getGameMoveDuration(datum)
         const _deadline = Number(startTime + 2n * duration)
-        if (deadline !== _deadline) setDeadline(_deadline)
         return (
           <Grid
             templateAreas={`"moveA moveB"
@@ -554,7 +554,7 @@ const Game = () => {
             <GridItem area={'moveA'} >
               <Flex direction='column' justify='flex-end' align='center' h='full'>
                 <Heading variant='brand' mb='25px'>Time remaining</Heading>
-                {Timer(time)}
+                <Countdown date={_deadline} renderer={renderer} onMount={handleMount} onComplete={onComplete} />
                 {
                   timerDone
                     ? <Heading variant='brand' textAlign='center' mt='25px'>
