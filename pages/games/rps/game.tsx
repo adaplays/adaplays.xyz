@@ -1,7 +1,7 @@
 import { useRouter } from 'next/router'
 import ValidateGate from 'components/validate-gate'
 import {
-  Button, Flex, Grid, GridItem, Heading, Spinner, Icon, Box,
+  Button, Flex, Grid, GridItem, Heading, Spinner, Icon,
   FormControl,
   FormErrorMessage,
   FormLabel,
@@ -16,7 +16,7 @@ import { useSession } from 'next-auth/react'
 import { validatorAddress, validatorRefUtxo, moves, moveToInt } from 'constants/games/rps/constants';
 import { Lucid, UTxO, Data, PlutusData, Constr, utf8ToHex, hexToUtf8 } from 'lucid-cardano'
 import { useEffect, useState, useCallback } from 'react'
-import { addDatumMatchResult, addDatumMoveA, addDatumMoveB, getGameFirstMove, getGameMatchResult, getGameMatchResultIndex, getGameMatchResultValue, getGameMoveDuration, getGamePolicyId, getGameSecondMoveIndex, getGameSecondMoveValue, getGameStake, getGameStartTime, getGameTokenName, getGameTxHash, getGameTxIx, getMatchResult, getMove, getOriginalRandomString } from 'utils/games/rps/utils'
+import { addDatumMatchResult, addDatumMoveA, addDatumMoveB, getGameFirstMove, getGameMatchResultIndex, getGameMatchResultValue, getGameMoveDuration, getGamePolicyId, getGameSecondMoveIndex, getGameSecondMoveValue, getGameStake, getGameStartTime, getGameTokenName, getGameTxHash, getGameTxIx, getMatchResult, getMove, getOriginalRandomString } from 'utils/games/rps/utils'
 import { MatchResult, Move } from 'types/games/rps/types'
 import { FaHandPaper, FaHandRock, FaHandScissors, FaQuestion } from 'react-icons/fa';
 import { IconType } from 'react-icons'
@@ -36,14 +36,54 @@ const Game = () => {
   const [waiting, setWaiting] = useState<boolean>(true)
   const [invalid, setInvalid] = useState<boolean>(false)
   const [utxo, setUtxo] = useState<UTxO | null>(null)
+
   const { status, data } = useSession()
+
   const router = useRouter()
   const query = router.query;
+
   const moveIconMap: Record<Move, IconType> = { "Rock": FaHandRock, "Paper": FaHandPaper, "Scissors": FaHandScissors }
+
   const winString: string = "You won! Get pool funds"
   const drawString: string = "Its draw! Get your funds back"
   const loseString: string = ":( You lost"
+  const timerDoneString: string = ":( Timer is done"
+
+  // Four hooks for `Timer` component
   const [timerDone, setTimerDone] = useState<boolean>(false)
+  const [deadline, setDeadline] = useState<number | null>(null)
+  const [time, setTime] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (timerDone || deadline === null) {
+        clearInterval(interval)
+      } else {
+        const timeRemaining = deadline - Date.now()
+        if (timeRemaining <= 0) {
+          setTimerDone(true)
+          clearInterval(interval)
+        }
+        setTime(Math.max(timeRemaining, 0))
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [deadline, setTimerDone, timerDone]);
+
+  // Two hooks for player A specifically
+  const [moveA, setMoveA] = useState<Move | null>(null)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (query?.player === 'B') {
+        clearInterval(interval)
+      } else if (query?.player === 'A' && data?.user && utxo) {
+        clearInterval(interval)  // TODO test putting it above creates any issue or not
+        getMove(data!.user.password, Data.from(utxo!.datum!))
+          .then((move: Move) => setMoveA(move))
+          .catch((e) => { setInvalid(true); console.log(e) })
+      }
+    }, 4000)
+    return () => clearInterval(interval)
+  }, [data, query, utxo])
 
   const gameCompleted = useCallback(() => {
     router.push({
@@ -85,6 +125,7 @@ const Game = () => {
           if (!utxo || (JSON.stringify(utxo) !== JSON.stringify(_utxo))) {  // their is no utxo yet or we have an updated one
             setUtxo(_utxo)
             setTimerDone(false)
+            // setDeadline(null)
             setWaiting(false)
           }
         } else if (utxo) {  // that means we already have utxo set but now we are unable to find it, that means game got completed
@@ -92,7 +133,7 @@ const Game = () => {
         }
 
       }
-    }, 25 * 1000)
+    }, 12 * 1000)
     return () => clearInterval(interval)
   }, [status, utxo, getDesiredGameUtxo, gameCompleted])
 
@@ -120,15 +161,9 @@ const Game = () => {
 
   // First player options.
   const PlayerA = () => {
-    const [move, setMove] = useState<Move | null>(null)
 
-    useEffect(() => {
-      getMove(data!.user.password, Data.from(utxo!.datum!))
-        .then((move: Move) => setMove(move))
-        .catch((e) => setInvalid(e))
-    }, [])
-
-    const getFundsBackA = async (deadline: number) => {
+    console.log('playera renderre')
+    const getFundsBackA = async () => {
 
       const _utxo = await getDesiredGameUtxo()
 
@@ -136,11 +171,15 @@ const Game = () => {
 
         setUtxo(_utxo)
         setTimerDone(false)  // this repeated pattern must be isolated or this if thing be removed
+        // setDeadline(null)
         alert("Other player made a move in nick of time!")
 
       } else {
         const lucid: Lucid = await getLucid(data!.user.wallet)
         const datum: PlutusData = Data.from(utxo!.datum!)
+        const startTime = getGameStartTime(datum)
+        const duration = getGameMoveDuration(datum)
+        const _deadline = Number(startTime + duration)
         const policyId = getGamePolicyId(datum)
         const tokenName = getGameTokenName(datum)
         const unit = policyId + tokenName
@@ -151,7 +190,7 @@ const Game = () => {
           .readFrom([validatorRefUtxo])
           .collectFrom([utxo!], Data.to(new Constr(2, [])))
           .addSignerKey(paymentCredential!.hash)
-          .validFrom(deadline + 1000)  // adding 1 second, though with 1 milisecond it should work but somehow doesnt... got best at 0.2 second which also felt as unreliable.
+          .validFrom(_deadline + 1000)  // adding 1 second, though with 1 milisecond it should work but somehow doesnt... got best at 0.2 second which also felt as unreliable.
           .mintAssets({ [unit]: -1n }, Data.to(new Constr(1, [])))
           .attachMintingPolicy(mintingPolicy)
           .complete()
@@ -174,17 +213,17 @@ const Game = () => {
       const tokenName = getGameTokenName(datum)
       const startTime = getGameStartTime(datum)
       const duration = getGameMoveDuration(datum)
-      const deadline = Number(startTime + 2n * duration)
+      const _deadline = Number(startTime + 2n * duration)
       const unit = policyId + tokenName
       const mintingPolicy = getMintingPolicy(getGameTxHash(datum), Number(getGameTxIx(datum)), hexToUtf8(tokenName))
       const { paymentCredential } = lucid.utils.getAddressDetails(await lucid.wallet.address())
       const tx = await lucid
         .newTx()
         .readFrom([validatorRefUtxo])
-        .collectFrom([utxo!], Data.to(new Constr(1, [utf8ToHex(nonce), new Constr(moveToInt[move!], [])])))
+        .collectFrom([utxo!], Data.to(new Constr(1, [utf8ToHex(nonce), new Constr(moveToInt[moveA!], [])])))
         .addSignerKey(paymentCredential!.hash)
         .validFrom(Number(startTime) + 1000)
-        .validTo(deadline - 1000)
+        .validTo(_deadline - 1000)
         .mintAssets({ [unit]: -1n }, Data.to(new Constr(1, [])))
         .attachMintingPolicy(mintingPolicy)
         .complete()
@@ -208,19 +247,19 @@ const Game = () => {
       const tokenName = getGameTokenName(datum)
       const startTime = getGameStartTime(datum)
       const duration = getGameMoveDuration(datum)
-      const deadline = Number(startTime + 2n * duration)
+      const _deadline = Number(startTime + 2n * duration)
       const unit = policyId + tokenName
       const { paymentCredential } = lucid.utils.getAddressDetails(await lucid.wallet.address())
-      const datumWithMove = addDatumMoveA(datum, move!)
+      const datumWithMove = addDatumMoveA(datum, moveA!)
       const datumWithMatchResult = addDatumMatchResult(datumWithMove, "Draw")
       const tx = await lucid
         .newTx()
         .readFrom([validatorRefUtxo])
-        .collectFrom([utxo!], Data.to(new Constr(1, [utf8ToHex(nonce), new Constr(moveToInt[move!], [])])))
+        .collectFrom([utxo!], Data.to(new Constr(1, [utf8ToHex(nonce), new Constr(moveToInt[moveA!], [])])))
         .payToContract(validatorAddress, { inline: Data.to(datumWithMatchResult) }, { lovelace: getGameStake(datum), [unit]: 1n })
         .addSignerKey(paymentCredential!.hash)
         .validFrom(Number(startTime) + 1000)
-        .validTo(deadline - 1000)
+        .validTo(_deadline - 1000)
         .complete()
       const signedTx = await tx.sign().complete()
       try {
@@ -241,7 +280,8 @@ const Game = () => {
       if (getGameSecondMoveIndex(datum) === 1) {  // we are in nothing case
         const startTime = getGameStartTime(datum)
         const duration = getGameMoveDuration(datum)
-        const deadline = Number(startTime + duration)
+        const _deadline = Number(startTime + duration)
+        if (deadline !== _deadline) setDeadline(_deadline)
         return (
           <Grid
             templateAreas={`"moveA moveB"
@@ -251,12 +291,12 @@ const Game = () => {
             h={`calc(100vh - ${navHeight})`}
           >
             <GridItem area={'moveA'} >
-              {MoveComponent(move ? moveIconMap[move] : null, false)}
+              {MoveComponent(moveA ? moveIconMap[moveA] : null, false)}
             </GridItem>
             <GridItem area={'moveB'}>
               <Flex direction='column' justify='flex-end' align='center' h='full'>
                 <Heading variant='brand' mb='25px'>Time remaining</Heading>
-                {Timer(deadline, setTimerDone)}
+                {Timer(time)}
                 {
                   timerDone
                     ? <Heading variant='brand' textAlign='center' mt='25px'>
@@ -273,7 +313,7 @@ const Game = () => {
               {
                 timerDone && (
                   <Flex justify='center' h='full' align='center'>
-                    <Button {...brandButtonStyle} onClick={() => getFundsBackA(deadline)}>
+                    <Button {...brandButtonStyle} onClick={() => getFundsBackA()}>
                       Get your funds back
                     </Button>
 
@@ -287,7 +327,8 @@ const Game = () => {
         const moveB: Move = getGameSecondMoveValue(datum)
         const startTime = getGameStartTime(datum)
         const duration = getGameMoveDuration(datum)
-        const deadline = Number(startTime + 2n * duration)
+        const _deadline = Number(startTime + 2n * duration)
+        if (deadline !== _deadline) setDeadline(_deadline)
         return (
           <Grid
             templateAreas={`"moveA moveB"
@@ -297,30 +338,31 @@ const Game = () => {
             h={`calc(100vh - ${navHeight})`}
           >
             <GridItem area={'moveA'} >
-              {MoveComponent(move ? moveIconMap[move] : null, false)}
+              {MoveComponent(moveA ? moveIconMap[moveA] : null, false)}
             </GridItem>
             <GridItem area={'moveB'}>
               {MoveComponent(moveIconMap[moveB], true)}
             </GridItem>
             <GridItem area='choice'>
-              <Flex justify='space-between' h='full' align='center'>
-                {
-                  !move
-                    ? null
-                    : getMatchResult(move!, moveB) === 'WinB'
-                      ? <Heading variant='brand' textAlign='center'>
-                        {loseString}
-                      </Heading>
+              {
+                !moveA
+                  ? null
+                  : getMatchResult(moveA!, moveB) === 'WinB'
+                    ? <Heading variant='brand' textAlign='center' mt='15px'>
+                      {loseString}
+                    </Heading>
+                    : timerDone
+                      ? <Heading variant='brand' textAlign='center' mt='15px'>{timerDoneString}</Heading>
                       :
-                      <>
+                      <Flex justify='space-between' h='full' align='center'>
                         <VStack>
                           <Heading variant='brand'>
                             Time remaining
                           </Heading>
-                          <HStack>{Timer(deadline, setTimerDone)}</HStack>
+                          <HStack>{Timer(time)}</HStack>
                         </VStack>
                         {
-                          getMatchResult(move!, moveB) === 'WinA'
+                          getMatchResult(moveA!, moveB) === 'WinA'
                             ? <Button {...brandButtonStyle} onClick={() => playerAWin()}>
                               {winString}
                             </Button>
@@ -328,9 +370,8 @@ const Game = () => {
                               {drawString}
                             </Button>
                         }
-                      </>
-                }
-              </Flex>
+                      </Flex>
+              }
             </GridItem>
           </Grid>
         )
@@ -365,7 +406,7 @@ const Game = () => {
       if (utxo!.assets['lovelace'] !== getGameStake(datum)) throw "Stake amount doesn't match with that in datum"
       const startTime = getGameStartTime(datum)
       const duration = getGameMoveDuration(datum)
-      const deadline = Number(startTime + duration)
+      const _deadline = Number(startTime + duration)
       const tx = await lucid
         .newTx()
         .readFrom([validatorRefUtxo])
@@ -373,7 +414,7 @@ const Game = () => {
         .payToContract(validatorAddress, { inline: Data.to(addDatumMoveB(datum, move)) }, { lovelace: 2n * utxo!.assets['lovelace'], [unit]: 1n })
         .addSignerKey(paymentCredential!.hash)
         .validFrom(Number(startTime) + 1000)
-        .validTo(deadline - 1000)
+        .validTo(_deadline - 1000)
         .complete()
       const signedTx = await tx.sign().complete()
       try {
@@ -389,7 +430,9 @@ const Game = () => {
       if (getGameSecondMoveIndex(datum) === 1) {  // We are waiting for second player to make a move
         const startTime = getGameStartTime(datum)
         const duration = getGameMoveDuration(datum)
-        const deadline = Number(startTime + duration)
+        const _deadline = Number(startTime + duration)
+        if (deadline !== _deadline) setDeadline(_deadline)
+        console.log('rererere')
         return (
           <Grid
             templateAreas={`"moveA moveB"
@@ -404,7 +447,7 @@ const Game = () => {
             <GridItem area={'moveB'}>
               <Flex direction='column' justify='flex-end' align='center' h='full'>
                 <Heading variant='brand' mb='25px'>Time remaining</Heading>
-                {Timer(deadline, setTimerDone)}
+                {Timer(time)}
               </Flex>
             </GridItem>
             <GridItem area='choice'>
@@ -413,7 +456,7 @@ const Game = () => {
                   timerDone
                     ?
                     <Heading variant='brand' textAlign='center'>
-                      :( Timer is done
+                      {timerDoneString}
                     </Heading>
                     :
                     <Formik
@@ -455,7 +498,7 @@ const Game = () => {
           </Grid>
         )
       } else if (getGameMatchResultIndex(datum) === 1) {  // second player has made a move and match result is not determined, thus we are waiting for first player to make a move
-        const aTimeoutTakeB = async (deadline: number) => {
+        const aTimeoutTakeB = async () => {
 
           const _utxo = await getDesiredGameUtxo()
 
@@ -463,11 +506,15 @@ const Game = () => {
 
             setUtxo(_utxo)
             setTimerDone(false)
+            // setDeadline(null)
             alert("Other player made a move in nick of time!")
 
           } else {
             const lucid: Lucid = await getLucid(data!.user.wallet)
             const policyId = getGamePolicyId(datum)
+            const startTime = getGameStartTime(datum)
+            const duration = getGameMoveDuration(datum)
+            const _deadline = Number(startTime + 2n * duration)
             const tokenName = getGameTokenName(datum)
             const unit = policyId + tokenName
             const mintingPolicy = getMintingPolicy(getGameTxHash(datum), Number(getGameTxIx(datum)), hexToUtf8(tokenName))
@@ -477,7 +524,7 @@ const Game = () => {
               .readFrom([validatorRefUtxo])
               .collectFrom([utxo!], Data.to(new Constr(3, [])))
               .addSignerKey(paymentCredential!.hash)
-              .validFrom(deadline + 1000)
+              .validFrom(_deadline + 1000)
               .mintAssets({ [unit]: -1n }, Data.to(new Constr(1, [])))
               .attachMintingPolicy(mintingPolicy)
               .complete()
@@ -494,7 +541,8 @@ const Game = () => {
 
         const startTime = getGameStartTime(datum)
         const duration = getGameMoveDuration(datum)
-        const deadline = Number(startTime + 2n * duration)
+        const _deadline = Number(startTime + 2n * duration)
+        if (deadline !== _deadline) setDeadline(_deadline)
         return (
           <Grid
             templateAreas={`"moveA moveB"
@@ -506,7 +554,7 @@ const Game = () => {
             <GridItem area={'moveA'} >
               <Flex direction='column' justify='flex-end' align='center' h='full'>
                 <Heading variant='brand' mb='25px'>Time remaining</Heading>
-                {Timer(deadline, setTimerDone)}
+                {Timer(time)}
                 {
                   timerDone
                     ? <Heading variant='brand' textAlign='center' mt='25px'>
@@ -526,7 +574,7 @@ const Game = () => {
               {
                 timerDone && (
                   <Flex justify='center' h='full' align='center'>
-                    <Button {...brandButtonStyle} onClick={() => aTimeoutTakeB(deadline)}>
+                    <Button {...brandButtonStyle} onClick={() => aTimeoutTakeB()}>
                       Take pool funds!
                     </Button>
 
@@ -621,6 +669,3 @@ const Game = () => {
 }
 
 export default Game
-//""transaction submit error ShelleyTxValidationError ShelleyBasedEraBabbage (ApplyTxError [UtxowFailure (UtxoFailure (FromAlonzoUtxoFail (OutsideValidityIntervalUTxO (ValidityInterval {invalidBefore = SJust (SlotNo 12574209), invalidHereafter = SJust (SlotNo 12574315)}) (SlotNo 12574167))))])""
-//""transaction submit error ShelleyTxValidationError ShelleyBasedEraBabbage (ApplyTxError [UtxowFailure (UtxoFailure (FromAlonzoUtxoFail (OutsideValidityIntervalUTxO (ValidityInterval {invalidBefore = SJust (SlotNo 12632244), invalidHereafter = SJust (SlotNo 12632373)}) (SlotNo 12632223))))])""
-//""transaction submit error ShelleyTxValidationError ShelleyBasedEraBabbage (ApplyTxError [UtxowFailure (UtxoFailure (FromAlonzoUtxoFail (OutsideValidityIntervalUTxO (ValidityInterval {invalidBefore = SJust (SlotNo 12632290), invalidHereafter = SJust (SlotNo 12632373)}) (SlotNo 12632284))))])""
