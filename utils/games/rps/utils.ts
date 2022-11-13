@@ -1,7 +1,7 @@
 import { generateKey, decrypt } from "utils/cryptography/utils";
 import { Constr, Data, fromHex, hexToUtf8, Lucid, PlutusData, toHex, TxHash, utf8ToHex, UTxO } from "lucid-cardano"
 import { getMintingPolicy } from "utils/lucid/minting-policy";
-import { intToMatchResult, intToMove, moves, moveToInt } from "constants/games/rps/constants";
+import { intToMatchResult, intToMove, matchResultToInt, moves, moveToInt } from "constants/games/rps/constants";
 import { Move, MatchResult } from "types/games/rps/types";
 
 // Functions here assume that we are given a correct structure, call these inside try/catch if you may.
@@ -74,18 +74,30 @@ export const getMove = async (password: string, datum: PlutusData) => {
   throw "No move found"
 }
 
-// these most likely modify the original datum
+export const getMatchResult = (moveA: Move, moveB: Move): MatchResult => {
+  if (moveA === moveB) return "Draw"
+  else if (moveA === "Rock" && moveB === "Scissors") return "WinA"
+  else if (moveA === "Paper" && moveB === "Rock") return "WinA"
+  else if (moveA === "Scissors" && moveB === "Paper") return "WinA"
+  else return "WinB"
+}
+
+// these (i.e., following functions) most likely modify the original datum
+
 export const addDatumMoveB = (datum: PlutusData, move: Move) => {
   let newDatum = datum;
   (newDatum as Constr<PlutusData>).fields[2] = new Constr(0, [new Constr(moveToInt[move], [])])
   return newDatum
 }
 
+export const addDatumMoveA = (datum: PlutusData, move: Move) => {
+  let newDatum = datum;
+  (newDatum as Constr<PlutusData>).fields[1] = utf8ToHex(move)
+  return newDatum
+}
 
-// export const matchResult = (moveA: Move, moveB: Move): MatchResult => {
-//   if (moveA === moveB) return "Draw"
-//   else if (moveA === "Rock" && moveB === "Scissors") return "WinA"
-//   else if (moveA === "Paper" && moveB === "Rock") return "WinA"
-//   else if (moveA === "Scissors" && moveB === "Paper") return "WinA"
-//   else return "WinB"
-// }
+export const addDatumMatchResult = (datum: PlutusData, matchResult: MatchResult) => {
+  let newDatum = datum;
+  (newDatum as Constr<PlutusData>).fields[3] = new Constr(0, [new Constr(matchResultToInt[matchResult], [])])
+  return newDatum
+}

@@ -21,3 +21,4 @@ export const moveToInt: Record<Move, number> = {"Rock": 0, "Paper": 1, "Scissors
 export const intToMove: Record<number, Move> = {0: "Rock", 1: "Paper", 2: "Scissors"}
 
 export const intToMatchResult: Record<number, MatchResult> = {0: "WinA", 1: "WinB", 2: "Draw"}
+export const matchResultToInt: Record<MatchResult, number> = {"WinA": 0, "WinB": 1, "Draw": 2}
