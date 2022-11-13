@@ -34,8 +34,8 @@ const createGame = async (lucid: Lucid, router: NextRouter, playerBAddress: stri
     // 3. Create a locking transaction
     const policyId: PolicyId = lucid.utils.mintingPolicyToId(mintingPolicy)
     const unit: Unit = policyId + utf8ToHex("RPS")
-    const { paymentCredential: APaymentCredential } = lucid.utils.getAddressDetails(await lucid.wallet.address())
-    const { paymentCredential: BPaymentCredential } = lucid.utils.getAddressDetails(playerBAddress)
+    const { paymentCredential: APaymentCredential, stakeCredential: AStakeCredential } = lucid.utils.getAddressDetails(await lucid.wallet.address())
+    const { paymentCredential: BPaymentCredential, stakeCredential: BStakeCredential } = lucid.utils.getAddressDetails(playerBAddress)
     // Create our datum.
     // Need to generate cryptography credentials.
     const keyData = await generateKey(password)
@@ -48,8 +48,8 @@ const createGame = async (lucid: Lucid, router: NextRouter, playerBAddress: stri
       new Constr(0, [
         // GameParams
         new Constr(0, [
-          APaymentCredential!.hash,  // gPlayerA
-          BPaymentCredential!.hash,  // gPlayerB
+          new Constr(0, [new Constr(0, [APaymentCredential!.hash]), new Constr(0, [new Constr(0, [new Constr(0, [AStakeCredential!.hash])])])]),  // gPlayerA
+          new Constr(0, [new Constr(0, [BPaymentCredential!.hash]), new Constr(0, [new Constr(0, [new Constr(0, [BStakeCredential!.hash])])])]),  // gPlayerB
           lovelace,  // gStake
           BigInt(Date.now()),  // gStartTime
           180000n,  // gMoveDuration
