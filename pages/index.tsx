@@ -36,7 +36,10 @@ const Home: NextPage = () => {
         {"🛈 Note"}
       </Heading>
       <Text mt='10px'>
-        {"Currently the site is on Cardano's Preproduction test network. Kindly make sure that when interacting with this site, you are on that network."}
+        {"A. Currently the site is on Cardano's Preproduction test network. Kindly make sure that when interacting with this site, you are on that network."}
+      </Text>
+      <Text mt='10px'>
+        {"B. Use HTTPS and for best experience, try to have your system clock close to actual."}
       </Text>
       <Box mt='30px' {...brandTextBorder} display='inline-block'>
         <Heading variant='brand' w='20px' h='28px' transform='rotate(-45deg)' display='inline-block'>
