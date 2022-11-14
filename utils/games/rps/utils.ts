@@ -1,12 +1,15 @@
 import { generateKey, decrypt } from "utils/cryptography/utils";
-import { Constr, Data, fromHex, hexToUtf8, Lucid, PlutusData, toHex, TxHash, utf8ToHex, UTxO } from "lucid-cardano"
+import { Constr, Data, fromHex, hexToUtf8, Lucid, PlutusData, toHex, TxHash, utf8ToHex, UTxO, KeyHash } from "lucid-cardano"
 import { getMintingPolicy } from "utils/lucid/minting-policy";
-import { intToMatchResult, intToMove, matchResultToInt, moves, moveToInt } from "constants/games/rps/constants";
-import { Move, MatchResult } from "types/games/rps/types";
+import { intToMatchResult, intToMove, matchResultToInt, moves, moveToInt, matchResultToString } from "constants/games/rps/constants";
+import { Move, MatchResult, Game } from "types/games/rps/types";
+import { tokenName } from 'constants/games/rps/constants'
 
 // Functions here assume that we are given a correct structure, call these inside try/catch if you may.
 
 export const getGameParams = (datum: PlutusData) => (datum as Constr<PlutusData>).fields[0]
+export const getGamePlayerPC = (datum: PlutusData, forFirst: boolean) => (((getGameParams(datum) as Constr<PlutusData>).fields[forFirst ? 0 : 1] as Constr<PlutusData>).fields[0] as Constr<PlutusData>).fields[0] as string
+export const getGamePlayerSC = (datum: PlutusData, forFirst: boolean) => (((((getGameParams(datum) as Constr<PlutusData>).fields[forFirst ? 0 : 1] as Constr<PlutusData>).fields[1] as Constr<PlutusData>).fields[0] as Constr<PlutusData>).fields[0] as Constr<PlutusData>).fields[0] as string
 export const getGameStake = (datum: PlutusData) => (getGameParams(datum) as Constr<PlutusData>).fields[2] as bigint
 export const getGameStartTime = (datum: PlutusData) => (getGameParams(datum) as Constr<PlutusData>).fields[3] as bigint
 export const getGameMoveDuration = (datum: PlutusData) => (getGameParams(datum) as Constr<PlutusData>).fields[4] as bigint
@@ -29,12 +32,13 @@ export const getGameMatchResult = (datum: PlutusData) => (datum as Constr<Plutus
 export const getGameMatchResultIndex = (datum: PlutusData) => (getGameMatchResult(datum) as Constr<PlutusData>).index
 export const getGameMatchResultValue = (datum: PlutusData) => intToMatchResult[((getGameMatchResult(datum) as Constr<PlutusData>).fields[0] as Constr<PlutusData>).index]
 
-export const verifyNft = (lucid: Lucid, utxo: UTxO, tokenName: string) => {
+export const verifyNft = (lucid: Lucid, utxo: UTxO) => {
   const datum = Data.from(utxo.datum!);
   const gamePolicyId = getGamePolicyId(datum)
+  const gameTokenName = getGameTokenName(datum)
+  if (gameTokenName !== utf8ToHex(tokenName)) return false
   // nft amount is different than 1 (or not present)
-  if (utxo.assets[gamePolicyId + utf8ToHex(tokenName)] !== 1n)
-    return false
+  if (utxo.assets[gamePolicyId + gameTokenName] !== 1n) return false
   const txHash = getGameTxHash(datum)
   const txIx = getGameTxIx(datum)
   // txIx == undefined will also handle null case as null == undefined returns true. Note: 0 == undefined returns false
@@ -47,6 +51,40 @@ export const verifyNft = (lucid: Lucid, utxo: UTxO, tokenName: string) => {
   } else {
     return false
   }
+}
+
+export const getGameDetailsAndVerify = async (lucid: Lucid, utxo: UTxO, playerAddress: string, password: string): Promise<Game> => {
+  if (!utxo.datum) throw "No inline datum."
+  const datum = Data.from(utxo.datum!)
+  if (Object.keys(utxo.assets).length !== 2) throw "Must have only two assets."
+  const gameStakeAmount = getGameStake(datum)
+  if (gameStakeAmount % 1000000n !== 0n) throw "Ada must be integral."
+  let stakeInAda = Number(gameStakeAmount / 1000000n)
+  if (utxo.assets['lovelace'] !== gameStakeAmount) throw "Stake amount doesn't match with that in datum."
+  if (!verifyNft(lucid, utxo)) throw "NFT not genuine."  // even if `verifyNft` itself throws an error, we are fine
+  const playerAPC = getGamePlayerPC(datum, true)
+  const playerASC = getGamePlayerSC(datum, true)
+  const playerBPC = getGamePlayerPC(datum, false)
+  const playerBSC = getGamePlayerSC(datum, false)
+  const addressA = lucid.utils.credentialToAddress({ type: "Key", hash: playerAPC as KeyHash }, { type: "Key", hash: playerASC as KeyHash })
+  const addressB = lucid.utils.credentialToAddress({ type: "Key", hash: playerBPC as KeyHash }, { type: "Key", hash: playerBSC as KeyHash })
+  const startDate = new Date(Number(getGameStartTime(datum)))
+  const gameMoveDuration = getGameMoveDuration(datum)
+  if (!(gameMoveDuration % (60n * 1000n) === 0n)) throw "Duration is not in minutes."
+  if (addressA === playerAddress || addressB === playerAddress) {
+    return {
+      "First player's address": addressA,
+      "Second player's address": addressB,
+      "Game stake amount (Ada)": stakeInAda,
+      "Game start time": `${startDate.toLocaleDateString()} - ${startDate.toLocaleTimeString()}`,
+      "Game move duration (in minutes)": Number(gameMoveDuration / (60n * 1000n)),
+      "Game unique identifier": getGamePolicyId(datum),
+      // Ignoring `gTokenORef` as it's not as such relevant for end user and `verifyNft` already verifies its content
+      ...(addressA === playerAddress && {"Your move": await getMove(password, datum)}),
+      "Second player's move": getGameSecondMoveIndex(datum) === 1 ? "Not made." : getGameSecondMoveValue(datum),
+      "Match result": getGameMatchResultIndex(datum) === 1 ? "Not determined." : matchResultToString[getGameMatchResultValue(datum)],
+    }
+  } else throw "Invalid."
 }
 
 export const getKey = async (password: string, datum: PlutusData) => {

@@ -48,7 +48,14 @@ const createGame = async (lucid: Lucid, router: NextRouter, playerBAddress: stri
       new Constr(0, [
         // GameParams
         new Constr(0, [
-          new Constr(0, [new Constr(0, [APaymentCredential!.hash]), new Constr(0, [new Constr(0, [new Constr(0, [AStakeCredential!.hash])])])]),  // gPlayerA
+          new Constr(0, [
+            new Constr(0, [APaymentCredential!.hash]),
+            new Constr(0, [
+              new Constr(0, [
+                new Constr(0, [AStakeCredential!.hash])
+              ])
+            ])
+          ]),  // gPlayerA
           new Constr(0, [new Constr(0, [BPaymentCredential!.hash]), new Constr(0, [new Constr(0, [new Constr(0, [BStakeCredential!.hash])])])]),  // gPlayerB
           lovelace,  // gStake
           BigInt(Date.now()),  // gStartTime

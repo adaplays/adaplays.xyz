@@ -79,17 +79,11 @@ const Game = () => {
   // Two hooks for player A specifically
   const [moveA, setMoveA] = useState<Move | null>(null)
   useEffect(() => {
-    const interval = setInterval(() => {
-      if (query?.player === 'B') {
-        clearInterval(interval)
-      } else if (query?.player === 'A' && data?.user && utxo) {
-        clearInterval(interval)  // TODO test putting it above creates any issue or not
-        getMove(data!.user.password, Data.from(utxo!.datum!))
-          .then((move: Move) => setMoveA(move))
-          .catch((e) => { setInvalid(true); console.log(e) })
-      }
-    }, 4000)
-    return () => clearInterval(interval)
+    if (query?.player === 'A' && data?.user && utxo) {
+      getMove(data!.user.password, Data.from(utxo!.datum!))
+        .then((move: Move) => setMoveA(move))
+        .catch((e) => { setInvalid(true); console.log(e) })
+    }
   }, [data, query, utxo])
 
   const gameCompleted = useCallback(() => {
@@ -125,7 +119,8 @@ const Game = () => {
 
   useEffect(() => {
     const interval = setInterval(async () => {
-      if (status === 'authenticated') {
+      if (status !== 'authenticated') clearInterval(interval)
+      else {
         const _utxo = await getDesiredGameUtxo()
         if (_utxo) {
           if (!utxo || (JSON.stringify(utxo) !== JSON.stringify(_utxo))) {  // their is no utxo yet or we have an updated one
@@ -137,8 +132,7 @@ const Game = () => {
         } else if (utxo) {  // that means we already have utxo set but now we are unable to find it, that means game got completed
           gameCompleted()
         }
-
-      }
+      } 
     }, 12 * 1000)
     return () => clearInterval(interval)
   }, [status, utxo, getDesiredGameUtxo, gameCompleted])
@@ -359,10 +353,10 @@ const Game = () => {
                       :
                       <Flex justify='space-between' h='full' align='center'>
                         <VStack>
-                          <Heading variant='brand'>
+                          <Heading variant='brand' mt='15px'>
                             Time remaining
                           </Heading>
-                          <HStack><Countdown date={_deadline} renderer={renderer} onMount={handleMount} onComplete={onComplete} /></HStack>
+                          <Countdown date={_deadline} renderer={renderer} onMount={handleMount} onComplete={onComplete} />
                         </VStack>
                         {
                           getMatchResult(moveA!, moveB) === 'WinA'
