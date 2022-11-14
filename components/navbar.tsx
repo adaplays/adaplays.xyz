@@ -195,8 +195,8 @@ const ConnectButton = () => {
     </Button>
   ); else if (status === 'unauthenticated') return (
     <>
-      <SimpleAlert {...{ isOpen: walletNotFound.isOpen, onClose: walletNotFound.onClose, cancelRef: cancelRefWalletNotFound, message: "You don't have the selected wallet installed." }} />
-      <SimpleAlert {...{ isOpen: wrongNetwork.isOpen, onClose: wrongNetwork.onClose, cancelRef: cancelRefWrongNetwork, message: "You have selected wrong network, please switch to Preprod." }} />
+      <SimpleAlert {...{ isOpen: walletNotFound.isOpen, onClose: () => { resetStatus(); walletNotFound.onClose() }, cancelRef: cancelRefWalletNotFound, message: "You don't have the selected wallet installed." }} />
+      <SimpleAlert {...{ isOpen: wrongNetwork.isOpen, onClose: () => { resetStatus(); wrongNetwork.onClose() }, cancelRef: cancelRefWrongNetwork, message: "You have selected wrong network, please switch to Preprod." }} />
       <Popover onClose={resetStatus}>
         <PopoverTrigger>
           <Button {...connectbuttonStyle}>
