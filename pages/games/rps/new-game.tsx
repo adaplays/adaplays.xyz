@@ -1,5 +1,6 @@
 import {
   Flex,
+  Text,
   Button,
   FormControl,
   FormErrorMessage,
@@ -7,6 +8,11 @@ import {
   Input,
   Radio,
   RadioGroup,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+  PopoverArrow,
+  PopoverBody,
 } from '@chakra-ui/react'
 import type { NextPage } from 'next'
 import { useSession } from 'next-auth/react'
@@ -108,13 +114,14 @@ const NewGame: NextPage = () => {
   const createGameSchema = yup.object().shape({
     playerB: yup.string().required("Please enter other player's address"),
     stake: yup.number().required("Please enter stake Ada amount").integer().min(3, "Atleast 3 Ada must be staked"),
+    duration: yup.number().required("Please enter move duration").integer().min(3, "Set atleast 3 minutes").max(2160, "Duration shouldn't be more than 36 hours"),
     move: yup.string().required("Please enter your move").oneOf(moves)
   })
   return (
     <ValidateGate>
       <Flex direction='column' justify='center' h={`calc(100vh - ${navHeight})`} align='center'>
         <Formik
-          initialValues={{ playerB: '', stake: 3, move: '' }}
+          initialValues={{ playerB: '', stake: 3, duration: 3, move: '' }}
           validationSchema={createGameSchema}
           onSubmit={async (values, actions) => {
             const lucid: Lucid = await getLucid(data!.user.wallet)
@@ -130,9 +137,36 @@ const NewGame: NextPage = () => {
                 <FormErrorMessage>{props.errors.playerB}</FormErrorMessage>
               </FormControl>
               <FormControl isInvalid={!!props.errors.stake && props.touched.stake} mt='18px' borderColor='black'>
-                <FormLabel textAlign='center' fontWeight='bold'>Enter Ada stake amount</FormLabel>
+                <Flex justify='center'>
+                  <FormLabel fontWeight='bold'>Enter Ada stake amount</FormLabel>
+                  <Popover trigger='hover'>
+                    <PopoverTrigger>
+                      <Text _hover={{cursor: 'pointer'}}>🛈</Text>
+                    </PopoverTrigger>
+                    <PopoverContent>
+                      <PopoverArrow />
+                      <PopoverBody>Each player would be forced to enter this stake amount</PopoverBody>
+                    </PopoverContent>
+                  </Popover>
+                </Flex>
                 <Field as={Input} name='stake' type='number' />
                 <FormErrorMessage>{props.errors.stake}</FormErrorMessage>
+              </FormControl>
+              <FormControl isInvalid={!!props.errors.duration && props.touched.duration} mt='18px' borderColor='black'>
+                <Flex justify='center'>
+                  <FormLabel fontWeight='bold'>Enter move duration (in minutes)</FormLabel>
+                  <Popover trigger='hover'>
+                    <PopoverTrigger>
+                      <Text _hover={{cursor: 'pointer'}}>🛈</Text>
+                    </PopoverTrigger>
+                    <PopoverContent>
+                      <PopoverArrow />
+                      <PopoverBody>Second player deadline: Start time + this duration.<br/> Once second player has made a move, then first player&apos;s reply deadline: Start time + 2 * this duration.<br /> If other party doesn&apos;t respond in deadline, you&apos;ll get the pool funds.</PopoverBody>
+                    </PopoverContent>
+                  </Popover>
+                </Flex>
+                <Field as={Input} name='duration' type='number' />
+                <FormErrorMessage>{props.errors.duration}</FormErrorMessage>
               </FormControl>
               <FormControl isInvalid={!!props.errors.move && props.touched.move} mt='18px' borderColor='black'>
                 <FormLabel textAlign='center' fontWeight='bold'>Enter your move</FormLabel>
