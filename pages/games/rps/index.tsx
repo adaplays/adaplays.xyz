@@ -1,7 +1,7 @@
 import type { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import { Flex, Button, Heading } from '@chakra-ui/react';
-import { navHeight } from 'global-variables'
+import { navHeight } from 'constants/global'
 import NextLink from 'next/link'
 import { brandButtonStyle } from 'theme/simple'
 import ValidateGate from 'components/validate-gate'
@@ -15,6 +15,7 @@ const OptionButton = ({ message, href }: { message: string, href: string }) => {
     </NextLink>
   )
 }
+
 const Home: NextPage = () => {
   const router = useRouter()
   const query = router.query;

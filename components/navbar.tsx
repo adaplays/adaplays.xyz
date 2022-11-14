@@ -6,7 +6,7 @@ import type { SupportedWallets } from '../types/types'
 
 import { useState, useRef } from 'react';
 import NextLink from 'next/link';
-import { navHeight } from '../global-variables';
+import { navHeight } from 'constants/global';
 import { WalletApi, Lucid } from "lucid-cardano";
 import {
   Heading,
@@ -183,7 +183,7 @@ const ConnectButton = () => {
           setWalletConnected(await window.cardano.nami.isEnabled())
         }
       } catch (e) {
-        console.log(e);
+        console.error(e);
         resetStatus();
       }
     }

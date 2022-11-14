@@ -11,7 +11,7 @@ import {
   HStack,
   VStack,
 } from '@chakra-ui/react'
-import { navHeight } from 'global-variables'
+import { navHeight } from 'constants/global'
 import { getLucid } from 'utils/lucid/lucid'
 import { useSession } from 'next-auth/react'
 import { validatorAddress, validatorRefUtxo, moves, moveToInt } from 'constants/games/rps/constants';
@@ -82,7 +82,7 @@ const Game = () => {
     if (query?.player === 'A' && data?.user && utxo) {
       getMove(data!.user.password, Data.from(utxo!.datum!))
         .then((move: Move) => setMoveA(move))
-        .catch((e) => { setInvalid(true); console.log(e) })
+        .catch((e) => { setInvalid(true); console.error(e) })
     }
   }, [data, query, utxo])
 
@@ -199,7 +199,7 @@ const Game = () => {
           gameCompleted()
         } catch (e) {
           alert("Their was an error, kindly retry. Error could have been caused by system clock not being accurate enough")
-          console.log(e)
+          console.error(e)
         }
       }
     }
@@ -232,7 +232,7 @@ const Game = () => {
         gameCompleted()
       } catch (e) {
         alert("Their was an error, kindly retry. Error could have been caused by system clock not being accurate enough")
-        console.log(e)
+        console.error(e)
       }
 
     }
@@ -266,7 +266,7 @@ const Game = () => {
         gameCompleted()
       } catch (e) {
         alert("Their was an error, kindly retry. Error could have been caused by system clock not being accurate enough")
-        console.log(e)
+        console.error(e)
       }
 
     }
@@ -419,7 +419,7 @@ const Game = () => {
         reset()
       } catch (e) {
         alert("Their was an error, kindly retry. Error could have been caused by system clock not being accurate enough.")
-        console.log(e)
+        console.error(e)
       }
     }
     try {
@@ -529,7 +529,7 @@ const Game = () => {
               gameCompleted()
             } catch (e) {
               alert("Their was an error, kindly retry. Error could have been caused by system clock not being accurate enough")
-              console.log(e)
+              console.error(e)
             }
           }
         }
@@ -605,7 +605,7 @@ const Game = () => {
             gameCompleted()
           } catch (e) {
             alert("Their was an error, kindly retry. Error could have been caused by system clock not being accurate enough")
-            console.log(e)
+            console.error(e)
           }
         }
         return (
@@ -655,8 +655,6 @@ const Game = () => {
           : waiting
             ? <Waiting />
             : query.player === 'A' ? <PlayerA /> : <PlayerB />
-
-
       }
     </ValidateGate>
   )

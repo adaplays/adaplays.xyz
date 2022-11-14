@@ -8,7 +8,7 @@ import {
 import { useEffect, useState, useCallback, useRef, Fragment } from 'react'
 import type { NextPage } from 'next'
 import { useSession } from 'next-auth/react'
-import { navHeight } from 'global-variables'
+import { navHeight } from 'constants/global'
 import ValidateGate from 'components/validate-gate'
 import type { Lucid } from 'lucid-cardano'
 import { validatorAddress } from 'constants/games/rps/constants';
@@ -17,7 +17,7 @@ import { useRouter } from 'next/router';
 import type { Game } from 'types/games/rps/types'
 import { getGameDetailsAndVerify } from 'utils/games/rps/utils'
 
-// Logic to go about verifying a genuine game UTxO. If UTxO types (datum etc.) are invalid then user won't be able to play it anyways because our validator is typed. So even if I don't verify the types here, user won't be able to submit anyways.
+// If UTxO types (datum etc.) are invalid then user won't be able to play it anyways because our validator is typed. So even if I don't verify the types here, user won't be able to submit anyways.
 
 const ActiveGames: NextPage = () => {
   const router = useRouter()

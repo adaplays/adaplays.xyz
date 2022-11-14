@@ -1,7 +1,7 @@
 import type { NextPage } from 'next'
 import { useSession } from 'next-auth/react'
 import { Heading, Flex, Spinner } from '@chakra-ui/react';
-import { navHeight } from 'global-variables'
+import { navHeight } from 'constants/global'
 import type { ReactNode } from 'react'
 
 interface Props {

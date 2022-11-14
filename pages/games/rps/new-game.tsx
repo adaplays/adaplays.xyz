@@ -10,7 +10,7 @@ import {
 } from '@chakra-ui/react'
 import type { NextPage } from 'next'
 import { useSession } from 'next-auth/react'
-import { navHeight } from 'global-variables'
+import { navHeight } from 'constants/global'
 import * as yup from "yup";
 import { Field, Form, Formik } from 'formik';
 import { brandButtonStyle } from 'theme/simple'
@@ -98,7 +98,7 @@ const createGame = async (lucid: Lucid, router: NextRouter, playerBAddress: stri
     })
   } catch (e) {
     alert("Game could not be created. Kindly retry.")
-    console.log(e)
+    console.error(e)
   }
 }
 

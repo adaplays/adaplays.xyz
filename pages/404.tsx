@@ -1,6 +1,6 @@
 import { Heading, Flex } from '@chakra-ui/react'
 import type { NextPage } from 'next'
-import { navHeight } from '../global-variables'
+import { navHeight } from 'constants/global'
 
 const FourOhFour: NextPage = () => {
   return (

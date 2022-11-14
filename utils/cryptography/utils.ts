@@ -1,31 +1,3 @@
-// Initially wrote this but it turns out, lucid already has this.
-
-// type Hex = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | 'a' | 'b' | 'c' | 'd' | 'e' | 'f'
-//
-// const hexString: Hex[] = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'];
-//
-// const mapHex: Record<Hex, number> = {
-//   0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6,
-//   7: 7, 8: 8, 9: 9, a: 10, b: 11, c: 12, d: 13,
-//   e: 14, f: 15
-// };
-//
-// export const toHex = (uint8: Uint8Array) => {
-//   return Array.from(uint8)
-//     .map((a) => hexString[a >> 4] + hexString[a & 15])
-//     .join("");
-// }
-//
-// export const fromHex = (givenHexString: string) => {
-//   const arr = new Uint8Array(Math.floor((givenHexString || "").length / 2));
-//   for (let i = 0; i < arr.length; i++) {
-//     const a = mapHex[givenHexString[2 * i] as Hex];
-//     const b = mapHex[givenHexString[2 * i + 1] as Hex];
-//     arr[i] = (a << 4) | b;
-//   }
-//   return arr
-// }
-
 import { toHex } from "lucid-cardano"
 
 export const generateRandomString = () => {
@@ -34,27 +6,8 @@ export const generateRandomString = () => {
   return toHex(arr)
 }
 
-// Following is the nodejs code I wrote initially:
-//
-// import crypto from 'crypto'
-//
-// const GenerateKey = (password: string, gIter?: number, gIv?: Buffer) => {
-//   const addIter: number = crypto.randomInt(0, 200_000)
-//   const iter: number = gIter ? gIter : 2048_000 + addIter
-//   const iv: Buffer = crypto.randomBytes(24)
-//   const key: Buffer = crypto.pbkdf2Sync(password, iv, iter, 32, 'sha512')
-//   return { iv, iter, key }
-// }
-//
-// export default GenerateKey
-//
+// Written with help from their documentation: https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/deriveKey#pbkdf2_2
 
-// Now comes the version using web crypto api, written with help from their documentation: https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/deriveKey#pbkdf2_2
-
-/*
-  Get some key material to use as input to the deriveKey method.
-  The key material is a password supplied by the user.
-*/
 const getKeyMaterial = (password: string) => {
   let enc = new TextEncoder();
   return window.crypto.subtle.importKey(
@@ -86,8 +39,72 @@ export const generateKey = async (password: string, gIter?: number, gIv?: Uint8A
   return { iv, iter, key }
 }
 
+export const encrypt = async (message: string, key: CryptoKey, gIv?: Uint8Array) => {
+  let enc = new TextEncoder();
+  const iv: Uint8Array = gIv ? gIv : window.crypto.getRandomValues(new Uint8Array(12))
+  const encrypted = await window.crypto.subtle.encrypt(
+    { name: "AES-GCM", iv },
+    key,
+    enc.encode(message)
+  )
+  return { iv, encrypted }
+}
+
+export const decrypt = async (key: CryptoKey, iv: Uint8Array, encrypted: ArrayBuffer) => {
+  let decrypted = await window.crypto.subtle.decrypt(
+    {
+      name: "AES-GCM",
+      iv
+    },
+    key,
+    encrypted
+  )
+  let dec = new TextDecoder()
+  return dec.decode(decrypted)
+}
+
+// Initially wrote this but it turns out, lucid already has this.
+// type Hex = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | 'a' | 'b' | 'c' | 'd' | 'e' | 'f'
+//
+// const hexString: Hex[] = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'];
+//
+// const mapHex: Record<Hex, number> = {
+//   0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6,
+//   7: 7, 8: 8, 9: 9, a: 10, b: 11, c: 12, d: 13,
+//   e: 14, f: 15
+// };
+//
+// export const toHex = (uint8: Uint8Array) => {
+//   return Array.from(uint8)
+//     .map((a) => hexString[a >> 4] + hexString[a & 15])
+//     .join("");
+// }
+//
+// export const fromHex = (givenHexString: string) => {
+//   const arr = new Uint8Array(Math.floor((givenHexString || "").length / 2));
+//   for (let i = 0; i < arr.length; i++) {
+//     const a = mapHex[givenHexString[2 * i] as Hex];
+//     const b = mapHex[givenHexString[2 * i + 1] as Hex];
+//     arr[i] = (a << 4) | b;
+//   }
+//   return arr
+// }
+//
 // Following is the nodejs code I wrote initially:
 //
+// import crypto from 'crypto'
+//
+// const GenerateKey = (password: string, gIter?: number, gIv?: Buffer) => {
+//   const addIter: number = crypto.randomInt(0, 200_000)
+//   const iter: number = gIter ? gIter : 2048_000 + addIter
+//   const iv: Buffer = crypto.randomBytes(24)
+//   const key: Buffer = crypto.pbkdf2Sync(password, iv, iter, 32, 'sha512')
+//   return { iv, iter, key }
+// }
+//
+// export default GenerateKey
+//
+
 // import crypto from 'crypto'
 //
 // const Encrypt = (message: string, key: Buffer, gIv?: Buffer) => {
@@ -103,20 +120,6 @@ export const generateKey = async (password: string, gIter?: number, gIv?: Uint8A
 //
 // export default Encrypt
 //
-
-export const encrypt = async (message: string, key: CryptoKey, gIv?: Uint8Array) => {
-  let enc = new TextEncoder();
-  const iv: Uint8Array = gIv ? gIv : window.crypto.getRandomValues(new Uint8Array(12))
-  const encrypted = await window.crypto.subtle.encrypt(
-    { name: "AES-GCM", iv },
-    key,
-    enc.encode(message)
-  )
-  return { iv, encrypted }
-}
-
-// Following is the nodejs code I wrote initially:
-//
 // import crypto from 'crypto'
 //
 // const Decrypt = (key: Buffer, iv: Buffer, encrypted: Buffer, authTag: Buffer) => {
@@ -129,18 +132,3 @@ export const encrypt = async (message: string, key: CryptoKey, gIv?: Uint8Array)
 // }
 //
 // export default Decrypt
-//
-
-export const decrypt = async (key: CryptoKey, iv: Uint8Array, encrypted: ArrayBuffer) => {
-  let decrypted = await window.crypto.subtle.decrypt(
-    {
-      name: "AES-GCM",
-      iv
-    },
-    key,
-    encrypted
-  )
-  let dec = new TextDecoder()
-  return dec.decode(decrypted)
-}
-

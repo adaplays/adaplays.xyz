@@ -7,6 +7,7 @@ export const authOptions: NextAuthOptions = {
   // session: {
   //   strategy: "jwt",  // this strategy is also the default one, see: https://next-auth.js.org/getting-started/upgrade-v4#session-strategy
   // },
+
   // My home page is overloaded to handle both sign in & sign out.
   // Actually, I am never visiting these pages in my logic as I am still on same page after signout & also signin and this behavious as nothing to do with redirect.
   pages: {
@@ -21,18 +22,14 @@ export const authOptions: NextAuthOptions = {
       return token
     },
     session: async ({ session, token }) => {
-      // `as` is added following https://bobbyhadz.com/blog/typescript-type-unknown-is-not-assignable-to-type
-      // Depreciated Note [as I imported `User` type]: earlier, instead of `name` my property was `address` which led to this error: https://bobbyhadz.com/blog/typescript-type-has-no-properties-in-common-with-type
       session.user = token.user as User
       return session
     }
   },
-  // Configure one or more authentication providers
   providers: [
     CredentialsProvider({
       type: "credentials",  // this is by default, see other default params here: https://github.com/nextauthjs/next-auth/blob/main/packages/next-auth/src/providers/credentials.ts
       // The credentials is used to generate a suitable form on the sign in page.
-      // You can specify whatever fields you are expecting to be submitted.
       credentials: {},
       async authorize(credentials, req) {
         return credentials as User
