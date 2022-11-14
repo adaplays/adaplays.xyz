@@ -9,7 +9,7 @@ import ValidateGate from 'components/validate-gate'
 const OptionButton = ({ message, href }: { message: string, href: string }) => {
   return (
     <NextLink href={href} passHref>
-      <Button as="a" {...brandButtonStyle} mt='10px' w='300px' mb='10px' h='50px'>
+      <Button as="a" {...brandButtonStyle} mt='10px' w='350px' mb='10px' h='50px'>
         {message}
       </Button>
     </NextLink>
@@ -23,8 +23,7 @@ const Home: NextPage = () => {
       <Flex direction='column' justify='center' h={`calc(100vh - ${navHeight})`} align='center'>
         {query?.completed === "true" && <Heading variant='brand' mb='20px'>Game is completed</Heading>}
         <OptionButton message={"Create a new game"} href="/games/rps/new-game" />
-        <OptionButton message="Join a new game" href='/games/rps/join-game' />
-        <OptionButton message="Join a previous active game" href='/games/rps/active-games' />
+        <OptionButton message="Join an active game involving you" href='/games/rps/active-games' />
       </Flex>
     </ValidateGate>
   )

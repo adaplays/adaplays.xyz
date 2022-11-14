@@ -351,9 +351,9 @@ const Game = () => {
                     : timerDone
                       ? <Heading variant='brand' textAlign='center' mt='15px'>{timerDoneString}</Heading>
                       :
-                      <Flex justify='space-between' h='full' align='center'>
-                        <VStack>
-                          <Heading variant='brand' mt='15px'>
+                      <Flex justify='space-around' h='full' align='center'>
+                        <VStack spacing='2px' mt='15px'>
+                          <Heading variant='brand'>
                             Time remaining
                           </Heading>
                           <Countdown date={_deadline} renderer={renderer} onMount={handleMount} onComplete={onComplete} />

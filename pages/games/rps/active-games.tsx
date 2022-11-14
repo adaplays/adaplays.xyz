@@ -53,7 +53,7 @@ const ActiveGames: NextPage = () => {
         {
           !found ? <Flex h='full' justify='center' align='center'><Spinner size='lg' /></Flex>
             : matchDetails.length === 0
-              ? <Heading variant='brand' mt='30px'>No games found</Heading>
+              ? <Heading variant='brand' mt='30px'>No games found. If a game is newly created, it might take some time till it is reflected on blockchain, kindly refresh later.</Heading>
               :
               <>
                 <Heading variant='brand' mt='30px'>Games found: </Heading>
@@ -70,11 +70,13 @@ const ActiveGames: NextPage = () => {
                       {
                         Object.entries(element).map(
                           ([key, value]) => (
-                            <Fragment key={key}>
-                              <Text fontWeight='bold' display='inline'>{key}: </Text>
-                              <Text wordBreak='break-word' display='inline'>{value}</Text>
-                              <br />
-                            </Fragment>
+                            key !== 'Game unique identifier' && (
+                              <Fragment key={key}>
+                                <Text fontWeight='bold' display='inline'>{key}: </Text>
+                                <Text wordBreak='break-word' display='inline'>{value}</Text>
+                                <br />
+                              </Fragment>
+                            )
                           )
                         )
                       }
