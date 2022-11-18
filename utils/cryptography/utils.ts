@@ -1,7 +1,7 @@
 import { toHex } from "lucid-cardano"
 
 export const generateRandomString = () => {
-  var arr = new Uint8Array(20)
+  var arr = new Uint8Array(32)  // 256 bits.
   window.crypto.getRandomValues(arr)
   return toHex(arr)
 }

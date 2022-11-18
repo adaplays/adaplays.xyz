@@ -1,20 +1,8 @@
 import { Blockfrost, Lucid, WalletApi, UTxO, Script, Address, Data } from "lucid-cardano"
 import { SupportedWallets } from "types/types"
 
-export const getApi = async (walletName: SupportedWallets) => {
-  let api: WalletApi | null = null
-  switch (walletName) {
-    case "nami": {
-      api = await window.cardano.nami.enable();
-      break;
-    }
-    case "eternl": {
-      api = await window.cardano.eternl.enable();
-      break;
-    }
-  }
-  return api
-}
+export const getApi = async (walletName: SupportedWallets) => (await window.cardano[walletName].enable())
+
 
 export const getLucid = async (walletName: SupportedWallets) => {
   const api: WalletApi = await getApi(walletName)

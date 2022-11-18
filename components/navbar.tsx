@@ -151,14 +151,7 @@ const ConnectButton = () => {
   }
 
   const hasWalletExtension = (walletName: SupportedWallets) => {
-    switch (walletName) {
-      case "nami": {
-        return (!!window.cardano?.nami);
-      }
-      case "eternl": {
-        return (!!window.cardano?.eternl);
-      }
-    }
+    return (!!window.cardano?.[walletName]);
   }
 
   const disconnecting = async () => {
