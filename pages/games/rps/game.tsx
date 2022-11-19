@@ -640,7 +640,7 @@ const Game = () => {
 
   return (
     <ValidateGate>
-      {typeof (query?.policyId) !== "string" || typeof (query?.player) !== "string" || (query.player !== 'A' && query.player !== 'B')
+      {typeof (query?.policyId) !== "string"|| (query?.player !== 'A' && query?.player !== 'B')
         ? <Flex direction='column' justify='center' h={`calc(100vh - ${navHeight})`} align='center'>
           <Heading variant='brand'>
             Restricted.

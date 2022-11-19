@@ -150,9 +150,7 @@ const ConnectButton = () => {
     mt: '10px',
   }
 
-  const hasWalletExtension = (walletName: SupportedWallets) => {
-    return (!!window.cardano?.[walletName]);
-  }
+  const hasWalletExtension = (walletName: SupportedWallets) => (!!window.cardano?.[walletName])
 
   const disconnecting = async () => {
     setIsDisconnecting(true);
