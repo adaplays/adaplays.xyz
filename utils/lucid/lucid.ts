@@ -1,4 +1,4 @@
-import { Blockfrost, Lucid, WalletApi, UTxO, Script, Address, Data } from "lucid-cardano"
+import { Blockfrost, Lucid, WalletApi, UTxO, Script, Address, Data, PlutusData, Constr } from "lucid-cardano"
 import { SupportedWallets } from "types/types"
 
 export const getApi = async (walletName: SupportedWallets) => (await window.cardano[walletName].enable())
@@ -45,4 +45,12 @@ export const addScript = async (lucid: Lucid, address: Address, script: Script) 
     .complete()
   const signedTx = await tx.sign().complete()
   return (await signedTx.submit())  // returning txHash
+}
+
+export const getConstr = (data: PlutusData): Constr<PlutusData>  => {
+  if (data instanceof Constr<PlutusData>) {
+    return data
+  } else {
+    throw "Not of type Constr<PlutusData>"
+  }
 }

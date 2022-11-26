@@ -4,33 +4,34 @@ import { getMintingPolicy } from "utils/lucid/minting-policy";
 import { intToMatchResult, intToMove, matchResultToInt, moves, moveToInt, matchResultToString } from "constants/games/rps/constants";
 import { Move, MatchResult, Game } from "types/games/rps/types";
 import { tokenName } from 'constants/games/rps/constants'
+import { getConstr } from "utils/lucid/lucid";
 
 // Functions here assume that we are given a correct structure, call these inside try/catch if you may.
 
-export const getGameParams = (datum: PlutusData) => (datum as Constr<PlutusData>).fields[0]
-export const getGamePlayerPC = (datum: PlutusData, forFirst: boolean) => (((getGameParams(datum) as Constr<PlutusData>).fields[forFirst ? 0 : 1] as Constr<PlutusData>).fields[0] as Constr<PlutusData>).fields[0] as string
-export const getGamePlayerSC = (datum: PlutusData, forFirst: boolean) => (((((getGameParams(datum) as Constr<PlutusData>).fields[forFirst ? 0 : 1] as Constr<PlutusData>).fields[1] as Constr<PlutusData>).fields[0] as Constr<PlutusData>).fields[0] as Constr<PlutusData>).fields[0] as string
-export const getGameStake = (datum: PlutusData) => (getGameParams(datum) as Constr<PlutusData>).fields[2] as bigint
-export const getGameStartTime = (datum: PlutusData) => (getGameParams(datum) as Constr<PlutusData>).fields[3] as bigint
-export const getGameMoveDuration = (datum: PlutusData) => (getGameParams(datum) as Constr<PlutusData>).fields[4] as bigint
-export const getGameToken = (datum: PlutusData) => (getGameParams(datum) as Constr<PlutusData>).fields[5]
-export const getGamePolicyId = (datum: PlutusData) => (getGameToken(datum) as Constr<PlutusData>).fields[0] as string
-export const getGameTokenName = (datum: PlutusData) => (getGameToken(datum) as Constr<PlutusData>).fields[1] as string
-export const getGameTokenORef = (datum: PlutusData) => (getGameParams(datum) as Constr<PlutusData>).fields[6]
-export const getGameTxHash = (datum: PlutusData) => ((getGameTokenORef(datum) as Constr<PlutusData>).fields[0] as Constr<PlutusData>).fields[0] as TxHash
-export const getGameTxIx = (datum: PlutusData) => (getGameTokenORef(datum) as Constr<PlutusData>).fields[1] as bigint
-export const getGamePbkdf2Iv = (datum: PlutusData) => fromHex((getGameParams(datum) as Constr<PlutusData>).fields[7] as string)
-export const getGamePbkdf2Iter = (datum: PlutusData) => Number((getGameParams(datum) as Constr<PlutusData>).fields[8])
-export const getGameEncryptedNonce = (datum: PlutusData) => fromHex((getGameParams(datum) as Constr<PlutusData>).fields[9] as string)
-export const getGameEncryptIv = (datum: PlutusData) => fromHex((getGameParams(datum) as Constr<PlutusData>).fields[10] as string)
-export const getGameMoveByteString = (datum: PlutusData) => (datum as Constr<PlutusData>).fields[1] as string
-export const getGameFirstMove = (datum: PlutusData) => hexToUtf8((datum as Constr<PlutusData>).fields[1] as string) as Move
-export const getGameSecondMove = (datum: PlutusData) => (datum as Constr<PlutusData>).fields[2]
-export const getGameSecondMoveIndex = (datum: PlutusData) => (getGameSecondMove(datum) as Constr<PlutusData>).index
-export const getGameSecondMoveValue = (datum: PlutusData) => intToMove[((getGameSecondMove(datum) as Constr<PlutusData>).fields[0] as Constr<PlutusData>).index]
-export const getGameMatchResult = (datum: PlutusData) => (datum as Constr<PlutusData>).fields[3]
-export const getGameMatchResultIndex = (datum: PlutusData) => (getGameMatchResult(datum) as Constr<PlutusData>).index
-export const getGameMatchResultValue = (datum: PlutusData) => intToMatchResult[((getGameMatchResult(datum) as Constr<PlutusData>).fields[0] as Constr<PlutusData>).index]
+export const getGameParams = (datum: PlutusData) => getConstr(datum).fields[0]
+export const getGamePlayerPC = (datum: PlutusData, forFirst: boolean) => getConstr(getConstr(getConstr(getGameParams(datum)).fields[forFirst ? 0 : 1]).fields[0]).fields[0] as string
+export const getGamePlayerSC = (datum: PlutusData, forFirst: boolean) => getConstr(getConstr(getConstr(getConstr(getConstr(getGameParams(datum)).fields[forFirst ? 0 : 1]).fields[1]).fields[0]).fields[0]).fields[0] as string
+export const getGameStake = (datum: PlutusData) => getConstr(getGameParams(datum)).fields[2] as bigint
+export const getGameStartTime = (datum: PlutusData) => getConstr(getGameParams(datum)).fields[3] as bigint
+export const getGameMoveDuration = (datum: PlutusData) => getConstr(getGameParams(datum)).fields[4] as bigint
+export const getGameToken = (datum: PlutusData) => getConstr(getGameParams(datum)).fields[5]
+export const getGamePolicyId = (datum: PlutusData) => getConstr(getGameToken(datum)).fields[0] as string
+export const getGameTokenName = (datum: PlutusData) => getConstr(getGameToken(datum)).fields[1] as string
+export const getGameTokenORef = (datum: PlutusData) => getConstr(getGameParams(datum)).fields[6]
+export const getGameTxHash = (datum: PlutusData) => getConstr(getConstr(getGameTokenORef(datum)).fields[0]).fields[0] as TxHash
+export const getGameTxIx = (datum: PlutusData) => getConstr(getGameTokenORef(datum)).fields[1] as bigint
+export const getGamePbkdf2Iv = (datum: PlutusData) => fromHex(getConstr(getGameParams(datum)).fields[7] as string)
+export const getGamePbkdf2Iter = (datum: PlutusData) => Number(getConstr(getGameParams(datum)).fields[8])
+export const getGameEncryptedNonce = (datum: PlutusData) => fromHex(getConstr(getGameParams(datum)).fields[9] as string)
+export const getGameEncryptIv = (datum: PlutusData) => fromHex(getConstr(getGameParams(datum)).fields[10] as string)
+export const getGameMoveByteString = (datum: PlutusData) => getConstr(datum).fields[1] as string
+export const getGameFirstMove = (datum: PlutusData) => hexToUtf8(getConstr(datum).fields[1] as string) as Move
+export const getGameSecondMove = (datum: PlutusData) => getConstr(datum).fields[2]
+export const getGameSecondMoveIndex = (datum: PlutusData) => getConstr(getGameSecondMove(datum)).index
+export const getGameSecondMoveValue = (datum: PlutusData) => intToMove[getConstr(getConstr(getGameSecondMove(datum)).fields[0]).index]
+export const getGameMatchResult = (datum: PlutusData) => getConstr(datum).fields[3]
+export const getGameMatchResultIndex = (datum: PlutusData) => getConstr(getGameMatchResult(datum)).index
+export const getGameMatchResultValue = (datum: PlutusData) => intToMatchResult[getConstr(getConstr(getGameMatchResult(datum)).fields[0]).index]
 
 export const verifyNft = (lucid: Lucid, utxo: UTxO) => {
   const datum = Data.from(utxo.datum!);
