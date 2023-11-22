@@ -104,7 +104,7 @@ export default function Navbar() {
 
 const ConnectButton = () => {
   const { status } = useSession()
-  const [_walletName, _setWalletName] = useState<SupportedWallets>('nami')
+  const [_walletName, _setWalletName] = useState<SupportedWallets>('nufi')
   const [walletConnected, setWalletConnected] = useState<boolean>(false)
   const [selectWalletTapped, setSelectWalletTapped] = useState<boolean>(false)
   const [isDisconnecting, setIsDisconnecting] = useState<boolean>(false)
@@ -122,7 +122,7 @@ const ConnectButton = () => {
       setSelectWalletTapped(false);
     }, 200)
   }
-  const supportedWallets: SupportedWallets[] = ['nami', 'eternl']
+  const supportedWallets: SupportedWallets[] = ['nufi']
 
   const createPasswordSchema = yup.object().shape({
     password: yup
@@ -171,7 +171,7 @@ const ConnectButton = () => {
           wrongNetwork.onOpen()
         } else {
           _setWalletName(walletName)
-          setWalletConnected(await window.cardano.nami.isEnabled())
+          setWalletConnected(await window.cardano.nufi.isEnabled())
         }
       } catch (e) {
         console.error(e);
