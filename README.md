@@ -1,3 +1,11 @@
+# How to run
+
+```
+yarn
+cp .env.local.example .env.local
+yarn dev
+```
+
 # 🎲 adaplays.xyz
 
 Place to play staked games with moves verified by blockchain.
