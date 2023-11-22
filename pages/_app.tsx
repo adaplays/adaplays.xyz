@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import type { AppProps } from 'next/app'
 import { ChakraProvider, extendTheme, Container } from '@chakra-ui/react'
 import Head from 'next/head'
@@ -6,6 +7,7 @@ import Navbar from '../components/navbar'
 import { SessionProvider } from "next-auth/react"
 import { Session } from 'next-auth'
 import { headingTheme } from 'theme/components/heading'
+import { nufiToMetamaskSnapCardanoAdapter } from '@nufi/dapp-client-cardano';
 
 const theme = extendTheme({
   fonts: {
@@ -17,8 +19,20 @@ const theme = extendTheme({
   }
 })
 
+// TODO: adjust SDK so that it prevents injecting iframe multiple times
+let didInject = false;
+
 // https://stackoverflow.com/questions/73668032/nextauth-type-error-property-session-does-not-exist-on-type
 function MyApp({ Component, pageProps }: AppProps<{ session: Session }>) {
+  useEffect(() => {
+    if (didInject === false) {
+      // TODO: adjust SDK so that iframe is visible only after user choose NuFi wallet
+      // (relies on proper batching of requests).
+      nufiToMetamaskSnapCardanoAdapter();
+      didInject = true;
+    }
+  }, []);
+
   return (
     <SessionProvider session={pageProps.session}>
       <ChakraProvider theme={theme}>
