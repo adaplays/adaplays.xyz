@@ -1140,6 +1140,18 @@
     "@nodelib/fs.scandir" "2.1.5"
     fastq "^1.6.0"
 
+"@nufi/dapp-client-cardano@link:../nufi/packages/dapp-client/cardano":
+  version "0.0.0"
+  uid ""
+
+"@nufi/dapp-client-core@0.1.0":
+  version "0.0.0"
+  uid ""
+
+"@nufi/dapp-client-core@link:../nufi/packages/dapp-client/core":
+  version "0.0.0"
+  uid ""
+
 "@panva/hkdf@^1.0.1":
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/@panva/hkdf/-/hkdf-1.0.2.tgz#bab0f09d09de9fd83628220d496627681bc440d6"
