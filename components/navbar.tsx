@@ -171,9 +171,8 @@ const ConnectButton = () => {
           wrongNetwork.onOpen()
         } else {
           _setWalletName(walletName)
-          // TODO: `isEnabled` in NuFi SDK is broken
-          // await window.cardano.nufi.isEnabled()
-          setWalletConnected(true)
+          const enabled =  await window.cardano.nufi.isEnabled()
+          setWalletConnected(enabled)
         }
       } catch (e) {
         console.error(e);
