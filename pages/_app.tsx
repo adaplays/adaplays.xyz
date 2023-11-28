@@ -7,7 +7,7 @@ import Navbar from '../components/navbar'
 import { SessionProvider } from "next-auth/react"
 import { Session } from 'next-auth'
 import { headingTheme } from 'theme/components/heading'
-import { nufiToMetamaskSnapCardanoAdapter } from '@nufi/dapp-client-cardano';
+import { nufiAdapter } from '@nufi/dapp-client-cardano';
 
 const theme = extendTheme({
   fonts: {
@@ -30,7 +30,7 @@ function MyApp({ Component, pageProps }: AppProps<{ session: Session }>) {
     if (didInject === false) {
       // TODO: adjust SDK so that iframe is visible only after user choose NuFi wallet
       // (relies on proper batching of requests).
-      const {hideWidget} = nufiToMetamaskSnapCardanoAdapter();
+      const {hideWidget} = nufiAdapter('web3Auth');
       setHideWidget(() => hideWidget)
       didInject = true;
     }
@@ -40,7 +40,7 @@ function MyApp({ Component, pageProps }: AppProps<{ session: Session }>) {
     <SessionProvider session={pageProps.session}>
       <ChakraProvider theme={theme}>
         <Head>
-          <title>adaplays.xyz</title>
+          <title>adaplays.com</title>
           <meta name="description" content="Place to play simple games with ada" />
           <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png"/>
           <link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png"/>
@@ -55,6 +55,7 @@ function MyApp({ Component, pageProps }: AppProps<{ session: Session }>) {
         <Container maxWidth='container.md'>
           <Navbar hideWidget={hideWidget} />
           <Component {...pageProps} />
+          <div style={{position: 'fixed', bottom: 10, right: 10}}>Copyright (c) 2022 Sourabh Aggarwal</div>
         </Container>
       </ChakraProvider>
     </SessionProvider>
