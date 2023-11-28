@@ -37,7 +37,7 @@ function MyApp({ Component, pageProps }: AppProps<{ session: Session }>) {
     <SessionProvider session={pageProps.session}>
       <ChakraProvider theme={theme}>
         <Head>
-          <title>adaplays.xyz</title>
+          <title>adaplays.com</title>
           <meta name="description" content="Place to play simple games with ada" />
           <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png"/>
           <link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png"/>
@@ -52,6 +52,7 @@ function MyApp({ Component, pageProps }: AppProps<{ session: Session }>) {
         <Container maxWidth='container.md'>
           <Navbar/>
           <Component {...pageProps} />
+          <div style={{position: 'fixed', bottom: 10, right: 10}}>Copyright (c) 2022 Sourabh Aggarwal</div>
         </Container>
       </ChakraProvider>
     </SessionProvider>
