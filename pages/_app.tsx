@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { AppProps } from 'next/app'
 import { ChakraProvider, extendTheme, Container } from '@chakra-ui/react'
 import Head from 'next/head'
@@ -24,11 +24,14 @@ let didInject = false;
 
 // https://stackoverflow.com/questions/73668032/nextauth-type-error-property-session-does-not-exist-on-type
 function MyApp({ Component, pageProps }: AppProps<{ session: Session }>) {
+  const [hideWidget, setHideWidget] = useState<() => void>()
+
   useEffect(() => {
     if (didInject === false) {
       // TODO: adjust SDK so that iframe is visible only after user choose NuFi wallet
       // (relies on proper batching of requests).
-      nufiToMetamaskSnapCardanoAdapter();
+      const {hideWidget} = nufiToMetamaskSnapCardanoAdapter();
+      setHideWidget(() => hideWidget)
       didInject = true;
     }
   }, []);
@@ -50,7 +53,7 @@ function MyApp({ Component, pageProps }: AppProps<{ session: Session }>) {
           <meta name="theme-color" content="#ffffff"/>
         </Head>
         <Container maxWidth='container.md'>
-          <Navbar/>
+          <Navbar hideWidget={hideWidget} />
           <Component {...pageProps} />
         </Container>
       </ChakraProvider>
