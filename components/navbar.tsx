@@ -4,7 +4,7 @@
 import type { User } from "next-auth"
 import type { SupportedWallets } from '../types/types'
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import NextLink from 'next/link';
 import { navHeight } from 'constants/global';
 import { WalletApi, Lucid } from "lucid-cardano";
@@ -41,7 +41,7 @@ YupPassword(yup)
 import { brandButtonStyle } from 'theme/simple'
 import { getApi, getLucid } from "utils/lucid/lucid";
 
-export default function Navbar() {
+export default function Navbar({hideWidget}: {hideWidget: () => void}) {
   const [logoHover, setLogoHover] = useState<boolean>(false);
 
   return (
@@ -96,13 +96,13 @@ export default function Navbar() {
             <Icon pt='10px' height='36px' width='36px' as={FaGithub}></Icon>
           </Box> */}
         </Link>
-        <ConnectButton />
+        <ConnectButton hideWidget={hideWidget} />
       </HStack>
     </Flex>
   );
 }
 
-const ConnectButton = () => {
+const ConnectButton = ({hideWidget}: {hideWidget: () => void}) => {
   const { status } = useSession()
   const [_walletName, _setWalletName] = useState<SupportedWallets>('nufi')
   const [walletConnected, setWalletConnected] = useState<boolean>(false)
@@ -157,7 +157,14 @@ const ConnectButton = () => {
     resetStatus();
     await signOut({ redirect: false });
     setIsDisconnecting(false);
+    hideWidget()
   }
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      window.cardano.nufi.enable()
+    } 
+  }, [status])
 
   const connectWallet = async (walletName: SupportedWallets) => {
     if (!hasWalletExtension(walletName)) {
