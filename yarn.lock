@@ -1142,13 +1142,13 @@
 
 "@nufi/dapp-client-cardano@file:packages/nufi-dapp-client-cardano-v7.1.2.tgz":
   version "7.1.2"
-  resolved "file:packages/nufi-dapp-client-cardano-v7.1.2.tgz#bc00123fdc7cef7bdae0cfcc14a8fd4a4515d51b"
+  resolved "file:packages/nufi-dapp-client-cardano-v7.1.2.tgz#40ec7ec367b5c7974b7cae0113c68b2fb89be842"
   dependencies:
     "@nufi/dapp-client-core" "7.1.2"
 
 "@nufi/dapp-client-core@7.1.2", "@nufi/dapp-client-core@file:packages/nufi-dapp-client-core-v7.1.2.tgz":
   version "7.1.2"
-  resolved "file:packages/nufi-dapp-client-core-v7.1.2.tgz#647e415db22cba5fadc9b7960715b530d1fef0f4"
+  resolved "file:packages/nufi-dapp-client-core-v7.1.2.tgz#588783448239e8809962eccd048f0a3fd083bbaa"
 
 "@panva/hkdf@^1.0.1":
   version "1.0.2"
