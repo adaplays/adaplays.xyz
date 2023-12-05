@@ -42,7 +42,7 @@ YupPassword(yup)
 import { brandButtonStyle } from 'theme/simple'
 import { getApi, getLucid } from "utils/lucid/lucid";
 
-export default function Navbar({hideWidget}: {hideWidget: () => void}) {
+export default function Navbar({hideWidget}: {hideWidget?: () => void}) {
   const [logoHover, setLogoHover] = useState<boolean>(false);
 
   return (
@@ -103,7 +103,7 @@ export default function Navbar({hideWidget}: {hideWidget: () => void}) {
   );
 }
 
-const ConnectButton = ({hideWidget}: {hideWidget: () => void}) => {
+const ConnectButton = ({hideWidget}: {hideWidget?: () => void}) => {
   const { status } = useSession()
   const [_walletName, _setWalletName] = useState<SupportedWallets>('nufi')
   const [walletConnected, setWalletConnected] = useState<boolean>(false)
@@ -159,7 +159,7 @@ const ConnectButton = ({hideWidget}: {hideWidget: () => void}) => {
     resetStatus();
     await signOut({ redirect: false });
     setIsDisconnecting(false);
-    hideWidget()
+    hideWidget?.()
     setIsConnecting(false)
   }
 
