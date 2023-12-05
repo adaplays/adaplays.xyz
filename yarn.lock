@@ -1140,17 +1140,15 @@
     "@nodelib/fs.scandir" "2.1.5"
     fastq "^1.6.0"
 
-"@nufi/dapp-client-cardano@link:../nufi/packages/dapp-client/cardano":
-  version "0.0.0"
-  uid ""
+"@nufi/dapp-client-cardano@file:packages/nufi-dapp-client-cardano-v7.1.2.tgz":
+  version "7.1.2"
+  resolved "file:packages/nufi-dapp-client-cardano-v7.1.2.tgz#bc00123fdc7cef7bdae0cfcc14a8fd4a4515d51b"
+  dependencies:
+    "@nufi/dapp-client-core" "7.1.2"
 
-"@nufi/dapp-client-core@0.1.0":
-  version "0.0.0"
-  uid ""
-
-"@nufi/dapp-client-core@link:../nufi/packages/dapp-client/core":
-  version "0.0.0"
-  uid ""
+"@nufi/dapp-client-core@7.1.2", "@nufi/dapp-client-core@file:packages/nufi-dapp-client-core-v7.1.2.tgz":
+  version "7.1.2"
+  resolved "file:packages/nufi-dapp-client-core-v7.1.2.tgz#647e415db22cba5fadc9b7960715b530d1fef0f4"
 
 "@panva/hkdf@^1.0.1":
   version "1.0.2"
